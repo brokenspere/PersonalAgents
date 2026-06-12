@@ -21,19 +21,16 @@ def test_format_notification_message():
     assert "Market is up today significantly" in message
     assert "https://finance.yahoo.com/news/up" in message
 
-@patch('workers.notification.tasks.send_discord_notification')
 @patch('workers.notification.tasks.send_telegram_notification')
-def test_handle_news_ready_success(mock_telegram, mock_discord):
+def test_handle_news_ready_success(mock_telegram):
     payload_dict = get_sample_payload().model_dump(mode='json')
     
     handle_news_ready(payload_dict)
     
     mock_telegram.assert_called_once()
-    mock_discord.assert_called_once()
 
-@patch('workers.notification.tasks.send_discord_notification')
 @patch('workers.notification.tasks.send_telegram_notification')
-def test_handle_news_ready_empty(mock_telegram, mock_discord):
+def test_handle_news_ready_empty(mock_telegram):
     payload = get_sample_payload()
     payload.items = []
     payload_dict = payload.model_dump(mode='json')
@@ -42,4 +39,3 @@ def test_handle_news_ready_empty(mock_telegram, mock_discord):
     
     # Should not notify if there are no items
     mock_telegram.assert_not_called()
-    mock_discord.assert_not_called()

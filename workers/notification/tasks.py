@@ -77,7 +77,7 @@ def handle_news_ready(self, payload_dict: Dict[str, Any]) -> None:
     
     try:
         send_telegram_notification(message)
-        send_discord_notification(message)
+        # send_discord_notification(message) # Temporarily disabled to focus on Telegram
         logger.info("Successfully sent notifications.")
     except requests.RequestException as exc:
         logger.warning(f"Notification failed, applying exponential backoff: {exc}")
