@@ -1,3 +1,4 @@
+import html
 import logging
 import os
 import requests
@@ -14,11 +15,16 @@ DISCORD_WEBHOOK_URL = os.environ.get('DISCORD_WEBHOOK_URL')
 
 def format_notification_message(payload: ExtractionPayload) -> str:
     """
-    Formats the extracted payload into a human-readable message.
+    Formats the extracted payload into an HTML message for Telegram.
+    Dynamic content is escaped to prevent Telegram parse errors.
     """
-    message = f"📢 **New market updates from {payload.source} for {payload.market}**:\n\n"
+    source = html.escape(payload.source)
+    market = html.escape(payload.market)
+    message = f"📢 <b>New market updates from {source} for {market}</b>:\n\n"
     for item in payload.items:
-        message += f"🔹 {item.title}\n   {item.url}\n\n"
+        title = html.escape(item.title)
+        url = html.escape(str(item.url))
+        message += f"🔹 <a href=\"{url}\">{title}</a>\n\n"
     return message
 
 
@@ -34,7 +40,7 @@ def send_telegram_notification(message: str) -> None:
     response = requests.post(url, json={
         'chat_id': TELEGRAM_CHAT_ID,
         'text': message,
-        'parse_mode': 'Markdown',
+        'parse_mode': 'HTML',
         'disable_web_page_preview': True
     }, timeout=10)
     response.raise_for_status()

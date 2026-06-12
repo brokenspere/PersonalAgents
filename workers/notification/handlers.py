@@ -58,7 +58,7 @@ def send_telegram_notification_aws(message: str) -> None:
     response = requests.post(url, json={
         'chat_id': chat_id,
         'text': message,
-        'parse_mode': 'Markdown',
+        'parse_mode': 'HTML',
         'disable_web_page_preview': True
     }, timeout=10)
     response.raise_for_status()
