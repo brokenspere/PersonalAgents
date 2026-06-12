@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>High-Level Architecture</title>
+  <style>
+    :root {
+      --primary: #1E2761;
+      --accent: #02C39A;
+      --bg: #0F172A;
+      --surface: #1E293B;
+      --text: #F1F5F9;
+      --text-muted: #94A3B8;
+      --border: #334155;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: system-ui, sans-serif; background: var(--bg); color: var(--text); line-height: 1.6; max-width: 900px; margin: 0 auto; padding: 2rem; }
+    h1, h2, h3 { color: #fff; margin-bottom: 1rem; }
+    h1 { border-bottom: 2px solid var(--border); padding-bottom: 0.5rem; margin-bottom: 2rem; }
+    h2 { margin-top: 2rem; color: var(--accent); }
+    p, ol, ul { margin-bottom: 1rem; color: var(--text-muted); }
+    li { margin-left: 1.5rem; margin-bottom: 0.5rem; }
+    code { background: #000; padding: 0.2rem 0.4rem; border-radius: 4px; font-family: monospace; color: #fff; }
+    
+    .component-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      margin-bottom: 1rem;
+      overflow: hidden;
+    }
+    .component-card summary {
+      padding: 1rem;
+      cursor: pointer;
+      font-weight: bold;
+      list-style: none;
+      display: flex;
+      align-items: center;
+      user-select: none;
+    }
+    .component-card summary::-webkit-details-marker { display: none; }
+    .component-card summary::marker { display: none; content: ''; }
+    .component-card summary::before {
+      content: '+';
+      display: inline-block;
+      width: 1.5rem;
+      color: var(--accent);
+      font-weight: bold;
+    }
+    .component-card[open] summary::before { content: '-'; }
+    .component-card[open] {
+      border-color: var(--accent);
+      box-shadow: 0 0 10px rgba(2, 195, 154, 0.1);
+    }
+    .component-details { padding: 0 1rem 1rem 2.5rem; color: var(--text-muted); }
+    .flow-list li { background: var(--surface); padding: 0.8rem; border-radius: 6px; margin-bottom: 0.5rem; border-left: 3px solid var(--accent); }
+  </style>
+</head>
+<body>
+    <h1>High-Level Architecture: Scalable Agent Platform</h1>
+    <p>The platform is designed around a decoupled, <strong>Event-Driven Microservices Architecture</strong>. This ensures that scaling or adding new workers requires zero modifications to existing components.</p>
+    
+    <h2>System Flow</h2>
+    <ol class="flow-list">
+        <li><strong>Scheduler</strong> fires a <code>market.open</code> or <code>market.close</code> event based on NYSE market hours.</li>
+        <li><strong>Message Broker (Redis)</strong> receives the event and routes it to the subscribed queues.</li>
+        <li><strong>ScraperWorker</strong> receives the trigger, fetches data from Yahoo Finance, and publishes an <code>Extraction Payload</code> via a <code>news.ready</code> event back to the broker.</li>
+        <li><strong>NotificationWorker</strong> listens for <code>news.ready</code> events, formats the data for specific platforms (Telegram, Discord), and pushes the payload to external APIs.</li>
+    </ol>
+
+    <h2>Core Components</h2>
+    <details class="component-card">
+        <summary>1. Scheduler (Celery Beat)</summary>
+        <div class="component-details">
+            <p>A standalone container responsible purely for time-based triggers. It emits <strong>Events</strong> (JSON payloads containing at minimum an ISO-8601 timestamp and context identifiers like <code>{"market": "NYSE"}</code>).</p>
+        </div>
+    </details>
+    
+    <details class="component-card">
+        <summary>2. Message Broker (Redis)</summary>
+        <div class="component-details">
+            <p>The central nervous system of the platform. All communication between components goes through Redis, ensuring workers are completely isolated from one another.</p>
+        </div>
+    </details>
+
+    <details class="component-card">
+        <summary>3. Workers</summary>
+        <div class="component-details">
+            <p>Independent components that consume from or publish to the message broker. Each worker is containerized independently.</p>
+            <ul>
+                <li><strong>ScraperWorker:</strong> Uses BeautifulSoup to extract headlines.</li>
+                <li><strong>NotificationWorker:</strong> Handles API communication with Telegram and Discord.</li>
+            </ul>
+        </div>
+    </details>
+
+    <details class="component-card">
+        <summary>4. Shared Codebase</summary>
+        <div class="component-details">
+            <p>Common utilities like Celery configuration and data models are shared across independent Worker containers by utilizing Docker build contexts (copying a <code>shared/</code> directory from the monorepo root), rather than relying on private PyPI packages.</p>
+        </div>
+    </details>
+</body>
+</html>

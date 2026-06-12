@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AWS Deployment with Terraform</title>
+  <style>
+    :root {
+      --primary: #1E2761;
+      --accent: #F59E0B; /* AWS Orange-ish */
+      --bg: #0F172A;
+      --surface: #1E293B;
+      --text: #F1F5F9;
+      --text-muted: #94A3B8;
+      --border: #334155;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: system-ui, sans-serif; background: var(--bg); color: var(--text); line-height: 1.6; max-width: 900px; margin: 0 auto; padding: 2rem; }
+    h1 { border-bottom: 2px solid var(--border); padding-bottom: 0.5rem; margin-bottom: 2rem; }
+    h2 { color: var(--accent); margin: 2rem 0 1rem; }
+    p, ul, ol { margin-bottom: 1rem; color: var(--text-muted); }
+    li { margin-left: 1.5rem; margin-bottom: 0.5rem; }
+    pre { background: #000; padding: 1rem; border-radius: 6px; overflow-x: auto; color: #fff; border: 1px solid var(--border); }
+    .aws-service { font-weight: bold; color: var(--accent); }
+    
+    .component-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      margin-bottom: 1rem;
+      overflow: hidden;
+    }
+    .component-card summary {
+      padding: 1rem;
+      cursor: pointer;
+      font-weight: bold;
+      list-style: none;
+      display: flex;
+      align-items: center;
+      user-select: none;
+      color: #fff;
+    }
+    .component-card summary::-webkit-details-marker { display: none; }
+    .component-card summary::marker { display: none; content: ''; }
+    .component-card summary::before {
+      content: '▶';
+      display: inline-block;
+      width: 1.5rem;
+      color: var(--accent);
+      font-size: 0.8rem;
+    }
+    .component-card[open] summary::before { content: '▼'; }
+    .component-card[open] {
+      border-color: var(--accent);
+    }
+    .component-details { padding: 0 1rem 1rem 2.5rem; color: var(--text-muted); }
+    .strategy-list li { background: var(--surface); padding: 0.8rem; border-radius: 6px; margin-bottom: 0.5rem; border-left: 3px solid var(--accent); list-style-position: inside; margin-left: 0; }
+  </style>
+</head>
+<body>
+    <h1>AWS Deployment Plan (Terraform)</h1>
+    <p>To align with the requirement for independent resource allocation and lightweight containers, the platform will be deployed to AWS using Elastic Container Service (ECS) with AWS Fargate. Infrastructure as Code (IaC) will be managed via Terraform.</p>
+
+    <h2>Target Architecture</h2>
+    
+    <details class="component-card">
+        <summary>Compute</summary>
+        <div class="component-details">
+            <p><span class="aws-service">Amazon ECS (Fargate)</span>. Serverless containers allow us to scale the ScraperWorker, NotificationWorker, and Scheduler independently without managing EC2 instances.</p>
+        </div>
+    </details>
+    <details class="component-card">
+        <summary>Message Broker</summary>
+        <div class="component-details">
+            <p><span class="aws-service">Amazon ElastiCache (Redis)</span>. A managed Redis cluster to handle Celery queues and message routing.</p>
+        </div>
+    </details>
+    <details class="component-card">
+        <summary>Container Registry</summary>
+        <div class="component-details">
+            <p><span class="aws-service">Amazon ECR</span>. Private registry to store Docker images for our components.</p>
+        </div>
+    </details>
+    <details class="component-card">
+        <summary>Networking</summary>
+        <div class="component-details">
+            <p><span class="aws-service">Amazon VPC</span>. Private subnets for the Redis cluster and Workers, with NAT Gateways allowing Workers to access the internet (Yahoo Finance, Discord, Telegram).</p>
+        </div>
+    </details>
+    <details class="component-card">
+        <summary>Secrets Management</summary>
+        <div class="component-details">
+            <p><span class="aws-service">AWS Secrets Manager</span>. Securely stores API keys and Discord/Telegram webhooks.</p>
+        </div>
+    </details>
+
+    <h2>Terraform Plan Structure</h2>
+    <pre><code>terraform/
+├── vpc.tf          # VPC, Subnets, Internet/NAT Gateways
+├── ecr.tf          # ECR repositories for scheduler, scraper, notification
+├── elasticache.tf  # Redis cluster configuration
+├── ecs_cluster.tf  # ECS Cluster definition
+├── iam.tf          # Task execution roles and Secrets Manager access
+└── ecs_services.tf # Fargate Task Definitions and Services for each worker</code></pre>
+
+    <h2>Deployment Strategy</h2>
+    <ol class="strategy-list">
+        <li><strong>Build & Push:</strong> CI/CD pipeline (e.g., GitHub Actions) builds the Docker images from the monorepo root (utilizing the Docker build context for <code>shared/</code>) and pushes them to ECR.</li>
+        <li><strong>Terraform Apply:</strong> Terraform updates the ECS Task Definitions with the new image tags and rolls out the deployment seamlessly.</li>
+        <li><strong>Resource Allocation:</strong> Using Terraform, we can assign specific CPU/Memory limits to individual ECS tasks (e.g., granting the ScraperWorker 0.5 vCPU, while the Scheduler gets 0.25 vCPU).</li>
+    </ol>
+</body>
+</html>
