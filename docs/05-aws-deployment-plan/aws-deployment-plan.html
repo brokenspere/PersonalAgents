@@ -59,55 +59,55 @@
 </head>
 <body>
     <h1>AWS Deployment Plan (Terraform)</h1>
-    <p>To align with the requirement for independent resource allocation and lightweight containers, the platform will be deployed to AWS using Elastic Container Service (ECS) with AWS Fargate. Infrastructure as Code (IaC) will be managed via Terraform.</p>
+    <p>To maximize cost optimization for this personal project, the platform will utilize an AWS Native Serverless architecture. Infrastructure as Code (IaC) will be managed via Terraform.</p>
 
     <h2>Target Architecture</h2>
     
-    <details class="component-card">
-        <summary>Compute</summary>
+    <details class="component-card" open>
+        <summary>Compute & Scheduling</summary>
         <div class="component-details">
-            <p><span class="aws-service">Amazon ECS (Fargate)</span>. Serverless containers allow us to scale the ScraperWorker, NotificationWorker, and Scheduler independently without managing EC2 instances.</p>
+            <p><span class="aws-service">AWS Lambda</span>. Serverless compute functions for the Scraper and Notification logic. We only pay for the exact milliseconds of execution time.</p>
+            <p><span class="aws-service">Amazon EventBridge</span>. Replaces the Celery Beat scheduler. Triggering the Scraper Lambda based on cron schedules (NYSE market hours).</p>
         </div>
     </details>
     <details class="component-card">
         <summary>Message Broker</summary>
         <div class="component-details">
-            <p><span class="aws-service">Amazon ElastiCache (Redis)</span>. A managed Redis cluster to handle Celery queues and message routing.</p>
-        </div>
-    </details>
-    <details class="component-card">
-        <summary>Container Registry</summary>
-        <div class="component-details">
-            <p><span class="aws-service">Amazon ECR</span>. Private registry to store Docker images for our components.</p>
+            <p><span class="aws-service">Amazon SQS</span>. Replaces Redis/Celery queues. The Scraper Lambda pushes extracted news payloads to an SQS queue, which triggers the Notification Lambda.</p>
         </div>
     </details>
     <details class="component-card">
         <summary>Networking</summary>
         <div class="component-details">
-            <p><span class="aws-service">Amazon VPC</span>. Private subnets for the Redis cluster and Workers, with NAT Gateways allowing Workers to access the internet (Yahoo Finance, Discord, Telegram).</p>
+            <p><span class="aws-service">Default AWS Networking</span>. Lambdas will run without a custom VPC, allowing them direct outbound internet access to scrape Yahoo Finance and hit the Telegram API without the cost of NAT Gateways.</p>
         </div>
     </details>
     <details class="component-card">
         <summary>Secrets Management</summary>
         <div class="component-details">
-            <p><span class="aws-service">AWS Secrets Manager</span>. Securely stores API keys and Discord/Telegram webhooks.</p>
+            <p><span class="aws-service">AWS Systems Manager (SSM) Parameter Store</span>. Securely stores API keys and Telegram webhooks using SecureString (KMS encryption) for zero cost.</p>
+        </div>
+    </details>
+    <details class="component-card">
+        <summary>Logging & Monitoring</summary>
+        <div class="component-details">
+            <p><span class="aws-service">Amazon CloudWatch Logs</span>. Lambda execution logs are sent here. To strictly optimize costs and avoid long-term storage fees, a strict <strong>1-day retention policy</strong> will be applied to all log groups.</p>
         </div>
     </details>
 
     <h2>Terraform Plan Structure</h2>
     <pre><code>terraform/
-├── vpc.tf          # VPC, Subnets, Internet/NAT Gateways
-├── ecr.tf          # ECR repositories for scheduler, scraper, notification
-├── elasticache.tf  # Redis cluster configuration
-├── ecs_cluster.tf  # ECS Cluster definition
-├── iam.tf          # Task execution roles and Secrets Manager access
-└── ecs_services.tf # Fargate Task Definitions and Services for each worker</code></pre>
+├── eventbridge.tf  # Cron schedule to trigger scraper
+├── sqs.tf          # Queue connecting scraper and notification
+├── lambda.tf       # Scraper and Notification functions
+├── iam.tf          # Execution roles and permissions
+├── ssm.tf          # SSM Parameter Store configuration
+└── cloudwatch.tf   # Log groups with 1-day retention</code></pre>
 
     <h2>Deployment Strategy</h2>
     <ol class="strategy-list">
-        <li><strong>Build & Push:</strong> CI/CD pipeline (e.g., GitHub Actions) builds the Docker images from the monorepo root (utilizing the Docker build context for <code>shared/</code>) and pushes them to ECR.</li>
-        <li><strong>Terraform Apply:</strong> Terraform updates the ECS Task Definitions with the new image tags and rolls out the deployment seamlessly.</li>
-        <li><strong>Resource Allocation:</strong> Using Terraform, we can assign specific CPU/Memory limits to individual ECS tasks (e.g., granting the ScraperWorker 0.5 vCPU, while the Scheduler gets 0.25 vCPU).</li>
+        <li><strong>Package & Deploy:</strong> CI/CD pipeline packages the Python code into deployment zips (or container images if dependencies require it) and updates the Lambda functions.</li>
+        <li><strong>Terraform Apply:</strong> Terraform provisions the EventBridge rules, SQS queues, Lambda functions, and necessary IAM bindings.</li>
     </ol>
 </body>
 </html>
