@@ -5,7 +5,7 @@ import boto3
 from typing import Dict, Any
 
 from shared.models import Event, ExtractionPayload
-from workers.scraper.tasks import fetch_yahoo_finance_html, extract_headlines_from_html
+from workers.scraper.service import fetch_yahoo_finance_html, extract_headlines_from_html
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
@@ -21,7 +21,7 @@ def market_event_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
         # EventBridge passes the input dict directly to the event object
         event_model = Event.model_validate(event)
     except Exception as exc:
-        logger.error(f"Failed to parse event: {exc}")
+        logger.exception("Failed to parse event: %s", exc)
         return {"statusCode": 400, "body": "Invalid event payload"}
 
     if event_model.market != 'NYSE':
@@ -50,5 +50,5 @@ def market_event_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
         return {"statusCode": 200, "body": "Success"}
         
     except Exception as exc:
-        logger.error(f"Unexpected error during scraping: {exc}")
+        logger.exception("Unexpected error during scraping: %s", exc)
         raise # Let Lambda handle retries/DLQ
