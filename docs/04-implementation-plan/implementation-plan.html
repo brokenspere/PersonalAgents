@@ -108,12 +108,13 @@
                 <h2>Containerization & Local Testing</h2>
                 <p><strong>Goal:</strong> Ensure components run independently using Docker.</p>
                 <ul class="tasks">
-                    <li>Write <code>Dockerfile</code> for the Scheduler.</li>
-                    <li>Write <code>Dockerfile</code> for the ScraperWorker.</li>
-                    <li>Write <code>Dockerfile</code> for the NotificationWorker.</li>
-                    <li><em>Crucial Step:</em> Configure Dockerfiles to execute from the root directory so they can <code>COPY shared/</code> into their environments.</li>
-                    <li>Run <code>docker-compose up --build</code> and perform end-to-end testing locally.</li>
+                    <li style="color: var(--accent);">✓ Write <code>Dockerfile</code> for the Scheduler.</li>
+                    <li style="color: var(--accent);">✓ Write <code>Dockerfile</code> for the ScraperWorker.</li>
+                    <li style="color: var(--accent);">✓ Write <code>Dockerfile</code> for the NotificationWorker.</li>
+                    <li style="color: var(--accent);">✓ <em>Crucial Step:</em> Configure Dockerfiles to execute from the root directory so they can <code>COPY shared/</code> into their environments.</li>
+                    <li style="color: var(--accent);">✓ Run <code>docker-compose up --build</code> and perform end-to-end testing locally.</li>
                 </ul>
+                <p><a href="./05-implementation-logs/03-containerization/3-01-containerization-setup.md" style="color: var(--accent);">📋 Implementation Log: Containerization Setup</a></p>
             </div>
 
             <div class="tab-panel" id="panel-four">

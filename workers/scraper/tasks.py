@@ -75,7 +75,8 @@ def handle_market_event(self, event_dict: Dict[str, Any]) -> None:
         # Route to NotificationWorker
         app.send_task(
             'workers.notification.tasks.handle_news_ready',
-            args=[payload.model_dump(mode='json')]
+            args=[payload.model_dump(mode='json')],
+            queue='notification'
         )
         
     except requests.RequestException as exc:

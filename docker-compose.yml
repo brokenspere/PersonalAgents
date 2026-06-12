@@ -9,5 +9,35 @@ services:
       - redis_data:/data
     command: redis-server --appendonly yes
 
+  scheduler:
+    build:
+      context: .
+      dockerfile: scheduler/Dockerfile
+    environment:
+      - REDIS_URL=redis://redis:6379/0
+    depends_on:
+      - redis
+
+  scraper_worker:
+    build:
+      context: .
+      dockerfile: workers/scraper/Dockerfile
+    environment:
+      - REDIS_URL=redis://redis:6379/0
+    depends_on:
+      - redis
+
+  notification_worker:
+    build:
+      context: .
+      dockerfile: workers/notification/Dockerfile
+    environment:
+      - REDIS_URL=redis://redis:6379/0
+      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN:-}
+      - TELEGRAM_CHAT_ID=${TELEGRAM_CHAT_ID:-}
+      - DISCORD_WEBHOOK_URL=${DISCORD_WEBHOOK_URL:-}
+    depends_on:
+      - redis
+
 volumes:
   redis_data:

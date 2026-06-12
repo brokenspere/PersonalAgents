@@ -33,5 +33,6 @@ def emit_event(self, event_type: str, market: str) -> None:
     if event_type.startswith('market.'):
         app.send_task(
             'workers.scraper.tasks.handle_market_event',
-            args=[event.model_dump(mode='json')]
+            args=[event.model_dump(mode='json')],
+            queue='scraper'
         )
