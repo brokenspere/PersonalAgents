@@ -3,15 +3,16 @@ import logging
 import os
 import boto3
 import requests
+from botocore.config import Config
 from typing import Dict, Any
 
 from shared.models import ExtractionPayload
-from workers.notification.tasks import format_notification_message
+from workers.notification.service import format_notification_message
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
-ssm_client = boto3.client('ssm')
+ssm_client = boto3.client('ssm', config=Config(connect_timeout=5, read_timeout=5))
 
 # Cache credentials outside the handler for warm starts
 TELEGRAM_CREDS_CACHE = {}
@@ -42,7 +43,7 @@ def get_telegram_credentials() -> tuple[str, str]:
             
         return bot_token, chat_id
     except Exception as e:
-        logger.error(f"Failed to fetch secrets from SSM: {e}")
+        logger.exception("Failed to fetch secrets from SSM: %s", e)
         return None, None
 
 def send_telegram_notification_aws(message: str) -> None:
@@ -71,7 +72,7 @@ def sqs_event_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             body = json.loads(record['body'])
             payload = ExtractionPayload.model_validate(body)
         except Exception as exc:
-            logger.error(f"Failed to parse extraction payload: {exc}")
+            logger.exception("Failed to parse extraction payload: %s", exc)
             continue # Skip this record, avoid poison pill loop
             
         if not payload.items:
