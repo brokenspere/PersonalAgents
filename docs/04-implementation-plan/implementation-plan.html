@@ -97,10 +97,11 @@
                 <h2>Core Components Development</h2>
                 <p><strong>Goal:</strong> Build the individual microservices.</p>
                 <ul class="tasks">
-                    <li><strong>Scheduler:</strong> Configure Celery Beat to emit <code>market.open</code> and <code>market.close</code> events based on a cron schedule for NYSE hours.</li>
-                    <li><strong>NotificationWorker:</strong> Create the Celery task listening to <code>news.ready</code>. Implement Telegram and Discord API integrations. Add the delayed retry (exponential backoff) logic for fault tolerance.</li>
-                    <li><strong>ScraperWorker:</strong> Create the Celery task listening to <code>market.*</code>. Implement the Yahoo Finance scraping logic using <code>BeautifulSoup</code>. Ensure it outputs raw data to <code>news.ready</code>.</li>
+                    <li style="color: var(--accent);">✓ <strong>Scheduler:</strong> Configure Celery Beat to emit <code>market.open</code> and <code>market.close</code> events based on a cron schedule for NYSE hours.</li>
+                    <li style="color: var(--accent);">✓ <strong>NotificationWorker:</strong> Create the Celery task listening to <code>news.ready</code>. Implement Telegram and Discord API integrations. Add the delayed retry (exponential backoff) logic for fault tolerance.</li>
+                    <li style="color: var(--accent);">✓ <strong>ScraperWorker:</strong> Create the Celery task listening to <code>market.*</code>. Implement the Yahoo Finance scraping logic using <code>BeautifulSoup</code>. Ensure it outputs raw data to <code>news.ready</code>.</li>
                 </ul>
+                <p><a href="./05-implementation-logs/02-core-components/2-01-core-components-development.md" style="color: var(--accent);">📋 Implementation Log: Core Components Development</a></p>
             </div>
 
             <div class="tab-panel" id="panel-three">
