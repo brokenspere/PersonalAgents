@@ -121,11 +121,13 @@
                 <h2>AWS & Terraform Infrastructure</h2>
                 <p><strong>Goal:</strong> Prepare the cloud environment for production deployment.</p>
                 <ul class="tasks">
-                    <li>Initialize <code>terraform/</code> directory.</li>
-                    <li>Write Terraform configurations for VPC, Security Groups, and ElastiCache (Redis).</li>
-                    <li>Write Terraform configurations for ECR and ECS (Cluster, Task Definitions, Services for Fargate).</li>
-                    <li>Define IAM policies for Secrets Manager access.</li>
+                    <li style="color: var(--accent);">✓ Initialize <code>terraform/</code> directory.</li>
+                    <li style="color: var(--accent);">✓ Write Terraform configurations for SQS, EventBridge, SSM, and CloudWatch.</li>
+                    <li style="color: var(--accent);">✓ Write Terraform configurations for Lambda Functions and Event Source Mappings.</li>
+                    <li style="color: var(--accent);">✓ Define IAM execution policies.</li>
+                    <li style="color: var(--accent);">✓ Refactor Celery code to AWS Lambda handler functions.</li>
                 </ul>
+                <p><a href="./05-implementation-logs/04-aws-infrastructure/4-01-aws-native-refactor.md" style="color: var(--accent);">📋 Implementation Log: AWS Infrastructure & Serverless Refactoring</a></p>
             </div>
         </div>
     </div>
