@@ -60,6 +60,13 @@ jobs:
             --zip-file fileb://deployment.zip \
             --publish
 
+      - name: Update Enrichment Lambda Code
+        run: |
+          aws lambda update-function-code \
+            --function-name "${{ env.PROJECT_NAME }}-enrichment-${{ env.ENVIRONMENT }}" \
+            --zip-file fileb://deployment.zip \
+            --publish
+
       - name: Update Notification Lambda Code
         run: |
           aws lambda update-function-code \
