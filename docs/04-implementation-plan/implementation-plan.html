@@ -47,7 +47,8 @@
     #tab-one:checked ~ .tabs-nav label[for="tab-one"],
     #tab-two:checked ~ .tabs-nav label[for="tab-two"],
     #tab-three:checked ~ .tabs-nav label[for="tab-three"],
-    #tab-four:checked ~ .tabs-nav label[for="tab-four"] {
+    #tab-four:checked ~ .tabs-nav label[for="tab-four"],
+    #tab-five:checked ~ .tabs-nav label[for="tab-five"] {
       background: var(--surface);
       color: var(--accent);
       border-bottom: 1px solid var(--surface);
@@ -59,7 +60,8 @@
     #tab-one:checked ~ .content #panel-one,
     #tab-two:checked ~ .content #panel-two,
     #tab-three:checked ~ .content #panel-three,
-    #tab-four:checked ~ .content #panel-four {
+    #tab-four:checked ~ .content #panel-four,
+    #tab-five:checked ~ .content #panel-five {
       display: block;
     }
   </style>
@@ -68,16 +70,18 @@
     <h1>Step-by-Step Implementation Plan</h1>
     
     <div class="tabs-wrapper">
-        <input type="radio" name="tabs" id="tab-one" checked>
+        <input type="radio" name="tabs" id="tab-one">
         <input type="radio" name="tabs" id="tab-two">
         <input type="radio" name="tabs" id="tab-three">
         <input type="radio" name="tabs" id="tab-four">
+        <input type="radio" name="tabs" id="tab-five" checked>
 
         <div class="tabs-nav">
             <label for="tab-one">Phase 1</label>
             <label for="tab-two">Phase 2</label>
             <label for="tab-three">Phase 3</label>
             <label for="tab-four">Phase 4</label>
+            <label for="tab-five">Phase 5</label>
         </div>
 
         <div class="content">
@@ -128,6 +132,18 @@
                     <li style="color: var(--accent);">✓ Refactor Celery code to AWS Lambda handler functions.</li>
                 </ul>
                 <p><a href="./05-implementation-logs/04-aws-infrastructure/4-01-aws-native-refactor.md" style="color: var(--accent);">📋 Implementation Log: AWS Infrastructure & Serverless Refactoring</a></p>
+            </div>
+
+            <div class="tab-panel" id="panel-five">
+                <h2>Phase 5: Scraper Feature Enhancements (Upcoming)</h2>
+                <p><strong>Goal:</strong> Add intelligent enrichment, filtering, and resilience features to the pipeline.</p>
+                <ul class="tasks">
+                    <li>□ <strong>Data Models:</strong> Extend <code>shared/models.py</code> with <code>EnrichedPayload</code> and <code>EnrichedHeadlineItem</code>.</li>
+                    <li>□ <strong>Shared Utilities:</strong> Implement circuit breaker in the <code>shared/</code> module.</li>
+                    <li>□ <strong>ScraperWorker:</strong> Add header rotation, Redis deduplication caching, and implement separate extraction for "Trending Tickers".</li>
+                    <li>□ <strong>EnrichmentWorker:</strong> Create a new standalone worker that consumes extraction payloads, performs NLP ticker extraction, scores VADER sentiment, and outputs enriched payloads.</li>
+                    <li>□ <strong>NotificationWorker:</strong> Update to consume enriched payloads. Implement per-channel contextual filtering based on extracted tickers and sentiment scores.</li>
+                </ul>
             </div>
         </div>
     </div>

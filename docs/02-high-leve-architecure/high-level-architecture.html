@@ -64,33 +64,35 @@
     <h2>System Flow</h2>
     <ol class="flow-list">
         <li><strong>Scheduler</strong> fires a <code>market.open</code> or <code>market.close</code> event based on NYSE market hours.</li>
-        <li><strong>Message Broker (Redis)</strong> receives the event and routes it to the subscribed queues.</li>
-        <li><strong>ScraperWorker</strong> receives the trigger, fetches data from Yahoo Finance, and publishes an <code>Extraction Payload</code> via a <code>news.ready</code> event back to the broker.</li>
-        <li><strong>NotificationWorker</strong> listens for <code>news.ready</code> events, formats the data for specific platforms (Telegram, Discord), and pushes the payload to external APIs.</li>
+        <li><strong>Message Broker</strong> receives the event and routes it to the subscribed queues.</li>
+        <li><strong>ScraperWorker</strong> receives the trigger, fetches data (News and Trending Tickers), deduplicates using a cache, and publishes raw <code>Extraction Payload</code> events back to the broker.</li>
+        <li><strong>EnrichmentWorker</strong> listens for extraction events, performs NLP ticker extraction and sentiment analysis, and publishes an <code>Enriched Payload</code>.</li>
+        <li><strong>NotificationWorker</strong> listens for enriched events, applies channel-specific filtering rules, formats the data, and pushes the payload to external APIs.</li>
     </ol>
 
     <h2>Core Components</h2>
     <details class="component-card">
-        <summary>1. Scheduler (Celery Beat)</summary>
+        <summary>1. Scheduler (Celery Beat / EventBridge)</summary>
         <div class="component-details">
-            <p>A standalone container responsible purely for time-based triggers. It emits <strong>Events</strong> (JSON payloads containing at minimum an ISO-8601 timestamp and context identifiers like <code>{"market": "NYSE"}</code>).</p>
+            <p>A standalone component responsible purely for time-based triggers. It emits <strong>Events</strong> (JSON payloads containing at minimum an ISO-8601 timestamp and context identifiers like <code>{"market": "NYSE"}</code>).</p>
         </div>
     </details>
     
     <details class="component-card">
-        <summary>2. Message Broker (Redis)</summary>
+        <summary>2. Message Broker (Redis / SQS)</summary>
         <div class="component-details">
-            <p>The central nervous system of the platform. All communication between components goes through Redis, ensuring workers are completely isolated from one another.</p>
+            <p>The central nervous system of the platform. All communication between components goes through the broker, ensuring workers are completely isolated from one another.</p>
         </div>
     </details>
 
     <details class="component-card">
         <summary>3. Workers</summary>
         <div class="component-details">
-            <p>Independent components that consume from or publish to the message broker. Each worker is containerized independently.</p>
+            <p>Independent components that consume from or publish to the message broker. Each worker is containerized/deployed independently.</p>
             <ul>
-                <li><strong>ScraperWorker:</strong> Uses BeautifulSoup to extract headlines.</li>
-                <li><strong>NotificationWorker:</strong> Handles API communication with Telegram and Discord.</li>
+                <li><strong>ScraperWorker:</strong> Uses BeautifulSoup to extract headlines and applies deduplication logic to prevent redundant processing.</li>
+                <li><strong>EnrichmentWorker:</strong> A new processing step that extracts ticker entities and scores headline sentiment, outputting an Enriched Payload.</li>
+                <li><strong>NotificationWorker:</strong> Handles channel-specific filtering rules and API communication with Telegram and Discord.</li>
             </ul>
         </div>
     </details>
@@ -98,7 +100,7 @@
     <details class="component-card">
         <summary>4. Shared Codebase</summary>
         <div class="component-details">
-            <p>Common utilities like Celery configuration and data models are shared across independent Worker containers by utilizing Docker build contexts (copying a <code>shared/</code> directory from the monorepo root), rather than relying on private PyPI packages.</p>
+            <p>Common utilities like circuit breakers, configurations, and data models are shared across independent Worker containers by utilizing Docker build contexts (copying a <code>shared/</code> directory from the monorepo root), rather than relying on private PyPI packages.</p>
         </div>
     </details>
 </body>

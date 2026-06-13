@@ -44,7 +44,8 @@
 
     #tab-one:checked ~ .tabs-nav label[for="tab-one"],
     #tab-two:checked ~ .tabs-nav label[for="tab-two"],
-    #tab-three:checked ~ .tabs-nav label[for="tab-three"] {
+    #tab-three:checked ~ .tabs-nav label[for="tab-three"],
+    #tab-four:checked ~ .tabs-nav label[for="tab-four"] {
       background: var(--surface);
       color: var(--accent);
       border-bottom: 1px solid var(--surface);
@@ -55,7 +56,8 @@
 
     #tab-one:checked ~ .content #panel-one,
     #tab-two:checked ~ .content #panel-two,
-    #tab-three:checked ~ .content #panel-three {
+    #tab-three:checked ~ .content #panel-three,
+    #tab-four:checked ~ .content #panel-four {
       display: block;
     }
   </style>
@@ -67,11 +69,13 @@
         <input type="radio" name="tabs" id="tab-one" checked>
         <input type="radio" name="tabs" id="tab-two">
         <input type="radio" name="tabs" id="tab-three">
+        <input type="radio" name="tabs" id="tab-four">
 
         <div class="tabs-nav">
             <label for="tab-one">1. Event Payloads</label>
-            <label for="tab-two">2. ScraperWorker Logic</label>
-            <label for="tab-three">3. NotificationWorker Logic</label>
+            <label for="tab-two">2. ScraperWorker</label>
+            <label for="tab-three">3. EnrichmentWorker</label>
+            <label for="tab-four">4. NotificationWorker</label>
         </div>
 
         <div class="content">
@@ -83,35 +87,49 @@
   "timestamp": "2026-06-11T13:30:00Z",
   "event_type": "market.open"
 }</code></pre>
-                <p>This allows workers to understand the exact context of the trigger, even if message processing is delayed.</p>
+                <p><strong>Enriched Payload:</strong> Output from the EnrichmentWorker, providing context-rich data ready for filtering.</p>
+                <pre><code>{
+  "source": "yahoo_finance_news",
+  "timestamp": "2026-06-11T13:30:10Z",
+  "items": [
+    {
+      "title": "Market rallies on open",
+      "url": "https://finance.yahoo.com/news/...",
+      "tickers": ["AAPL", "TSLA"],
+      "sentiment_score": 0.85
+    }
+  ]
+}</code></pre>
             </div>
 
             <div class="tab-panel" id="panel-two">
                 <h2>ScraperWorker Logic (Yahoo Finance)</h2>
                 <p>Triggered by <code>market.open</code> and <code>market.close</code>.</p>
                 <ul>
-                    <li><strong>Tooling:</strong> Uses <code>BeautifulSoup</code> (static HTML parsing) to keep the container footprint lightweight. Playwright is avoided unless static parsing completely fails.</li>
-                    <li><strong>Extraction:</strong> Scrapes the top headlines and their corresponding URLs.</li>
-                    <li><strong>Output:</strong> Publishes an <strong>Extraction Payload</strong> to the <code>news.ready</code> queue. This is raw, unformatted structured data.</li>
+                    <li><strong>Tooling:</strong> Uses <code>BeautifulSoup</code> for static HTML parsing. Includes a shared circuit breaker and header rotation to improve resilience against blocking.</li>
+                    <li><strong>Extraction:</strong> Scrapes the top headlines and the "Trending Tickers" sections independently.</li>
+                    <li><strong>Deduplication:</strong> Integrates a caching mechanism (e.g. Redis) to store parsed headlines and prevent redundant data from being emitted within a 24-hour window, saving downstream compute.</li>
+                    <li><strong>Output:</strong> Publishes raw <strong>Extraction Payloads</strong> using distinct sources (e.g., <code>yahoo_finance_news</code> vs <code>yahoo_finance_trending</code>) to the broker.</li>
                 </ul>
-                <pre><code>{
-  "source": "yahoo_finance",
-  "market": "NYSE",
-  "timestamp": "2026-06-11T13:30:05Z",
-  "items": [
-    {"title": "Market rallies on open", "url": "https://finance.yahoo.com/news/..."},
-    {"title": "Tech stocks surge", "url": "https://finance.yahoo.com/news/..."}
-  ]
-}</code></pre>
             </div>
 
             <div class="tab-panel" id="panel-three">
-                <h2>NotificationWorker Logic & Fault Tolerance</h2>
-                <p>Triggered by <code>news.ready</code>.</p>
+                <h2>EnrichmentWorker Logic</h2>
+                <p>Triggered by extraction payloads from the ScraperWorker.</p>
                 <ul>
-                    <li><strong>Formatting:</strong> Consumes the <code>Extraction Payload</code> and applies platform-specific formatting (e.g., Markdown for Discord, HTML for Telegram).</li>
-                    <li><strong>Dispatch:</strong> Executes POST requests to external APIs.</li>
-                    <li><strong>Fault Tolerance (Delayed Retry):</strong> If an external API fails (e.g., rate limits, Discord downtime), the worker does NOT drop the message or send it immediately to a Dead Letter Queue. Instead, it <strong>NACKs the event and re-queues it with a delay (exponential backoff)</strong> using Celery's built-in retry mechanisms.</li>
+                    <li><strong>Ticker Extraction:</strong> Applies NLP and regex-based logic to extract mentioned stock tickers from headline text.</li>
+                    <li><strong>Sentiment Analysis:</strong> Utilizes libraries such as VADER to score the sentiment of extracted headlines (-1.0 to 1.0).</li>
+                    <li><strong>Output:</strong> Transforms the raw data into an <strong>Enriched Payload</strong> and publishes it to the broker.</li>
+                </ul>
+            </div>
+
+            <div class="tab-panel" id="panel-four">
+                <h2>NotificationWorker Logic & Fault Tolerance</h2>
+                <p>Triggered by enriched payloads.</p>
+                <ul>
+                    <li><strong>Contextual Filtering:</strong> Evaluates incoming payloads against channel-specific rules (e.g., specific tickers or sentiment thresholds) before proceeding.</li>
+                    <li><strong>Formatting:</strong> Applies platform-specific formatting (e.g., Markdown for Discord, HTML for Telegram) based on the channel context.</li>
+                    <li><strong>Fault Tolerance (Delayed Retry):</strong> If an external API fails (e.g., rate limits, Discord downtime), the worker does NOT drop the message. It NACKs the event and re-queues it with exponential backoff. Also utilizes the shared circuit breaker pattern.</li>
                 </ul>
             </div>
         </div>

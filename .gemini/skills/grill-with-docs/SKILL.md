@@ -85,4 +85,10 @@ Only offer to create an ADR when all three are true:
 
 If any of the three is missing, skip the ADR. Use the format in [ADR-FORMAT.md](./ADR-FORMAT.md).
 
+## After the session
+
+### Update Documentation
+
+Once the grilling session is complete and all architectural decisions and terminology have been agreed upon, proactively identify and update all relevant project documentation (e.g., architecture diagrams, logic documents, implementation plans, and deployment plans) to reflect the new decisions. Do not wait for the user to ask you to do this; offer a summary of the session and state that you will now update the documentation.
+
 </supporting-info>

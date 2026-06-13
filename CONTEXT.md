@@ -12,6 +12,10 @@ _Avoid_: Message, Trigger
 Raw, unformatted structured data (e.g., an array of headline/URL objects) published by a Worker, completely agnostic of its final presentation or delivery mechanism.
 _Avoid_: Formatted message, Rendered text
 
+**Enriched Payload**:
+Structured data that has been processed by an enrichment step (e.g., added sentiment scores, extracted entities) and is ready for filtering or notification.
+_Avoid_: Extraction Payload (when referring to processed data)
+
 **Worker**:
 A component that consumes from or publishes to the message broker (e.g., ScraperWorker, NotificationWorker) to perform specialized tasks.
 _Avoid_: Service

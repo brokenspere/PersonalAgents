@@ -66,14 +66,20 @@
     <details class="component-card" open>
         <summary>Compute & Scheduling</summary>
         <div class="component-details">
-            <p><span class="aws-service">AWS Lambda</span>. Serverless compute functions for the Scraper and Notification logic. We only pay for the exact milliseconds of execution time.</p>
+            <p><span class="aws-service">AWS Lambda</span>. Serverless compute functions for the Scraper, Enrichment, and Notification logic. We only pay for the exact milliseconds of execution time.</p>
             <p><span class="aws-service">Amazon EventBridge</span>. Replaces the Celery Beat scheduler. Triggering the Scraper Lambda based on cron schedules (NYSE market hours).</p>
         </div>
     </details>
     <details class="component-card">
-        <summary>Message Broker</summary>
+        <summary>Message Broker & Pipeline</summary>
         <div class="component-details">
-            <p><span class="aws-service">Amazon SQS</span>. Replaces Redis/Celery queues. The Scraper Lambda pushes extracted news payloads to an SQS queue, which triggers the Notification Lambda.</p>
+            <p><span class="aws-service">Amazon SQS</span>. Connects the Lambda functions in the pipeline. The Scraper pushes extraction payloads to an Enrichment queue, which triggers the Enrichment Lambda. The Enrichment Lambda pushes enriched payloads to a Notification queue, triggering the Notification Lambda.</p>
+        </div>
+    </details>
+    <details class="component-card">
+        <summary>Caching & Deduplication</summary>
+        <div class="component-details">
+            <p><span class="aws-service">Amazon ElastiCache (Redis) or DynamoDB</span>. Provides a fast key-value store to cache processed headlines for 24 hours, preventing redundant processing downstream.</p>
         </div>
     </details>
     <details class="component-card">
@@ -98,8 +104,8 @@
     <h2>Terraform Plan Structure</h2>
     <pre><code>terraform/
 ├── eventbridge.tf  # Cron schedule to trigger scraper
-├── sqs.tf          # Queue connecting scraper and notification
-├── lambda.tf       # Scraper and Notification functions
+├── sqs.tf          # Queues connecting Scraper -> Enrichment -> Notification
+├── lambda.tf       # Scraper, Enrichment, and Notification functions
 ├── iam.tf          # Execution roles and permissions
 ├── ssm.tf          # SSM Parameter Store configuration
 └── cloudwatch.tf   # Log groups with 1-day retention</code></pre>
