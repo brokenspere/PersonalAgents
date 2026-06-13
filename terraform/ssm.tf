@@ -19,3 +19,14 @@ resource "aws_ssm_parameter" "telegram_chat_id" {
     ignore_changes = [value]
   }
 }
+
+# resource "aws_ssm_parameter" "discord_webhook_url" {
+#   name        = "/${var.environment}/${var.project_name}/discord_webhook_url"
+#   description = "Discord Webhook URL for notifications"
+#   type        = "SecureString"
+#   value       = "dummy_value_change_me"
+# 
+#   lifecycle {
+#     ignore_changes = [value]
+#   }
+# }

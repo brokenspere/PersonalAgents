@@ -23,9 +23,33 @@ resource "aws_lambda_function" "scraper_function" {
 
   environment {
     variables = {
+      ENRICHMENT_QUEUE_URL = aws_sqs_queue.enrichment_queue.url
+      DEDUPLICATION_TABLE  = aws_dynamodb_table.scraper_cache.name
+    }
+  }
+}
+
+resource "aws_lambda_function" "enrichment_function" {
+  function_name    = "${var.project_name}-enrichment-${var.environment}"
+  role             = aws_iam_role.enrichment_lambda_role.arn
+  handler          = "workers.enrichment.handlers.sqs_event_handler"
+  runtime          = "python3.11"
+  filename         = data.archive_file.dummy_payload.output_path
+  source_code_hash = data.archive_file.dummy_payload.output_base64sha256
+  timeout          = 60
+  memory_size      = 512
+
+  environment {
+    variables = {
       NOTIFICATION_QUEUE_URL = aws_sqs_queue.notification_queue.url
     }
   }
+}
+
+resource "aws_lambda_event_source_mapping" "enrichment_sqs_trigger" {
+  event_source_arn = aws_sqs_queue.enrichment_queue.arn
+  function_name    = aws_lambda_function.enrichment_function.arn
+  batch_size       = 1
 }
 
 resource "aws_lambda_function" "notification_function" {
@@ -40,8 +64,9 @@ resource "aws_lambda_function" "notification_function" {
 
   environment {
     variables = {
-      TELEGRAM_BOT_TOKEN_SSM = aws_ssm_parameter.telegram_bot_token.name
-      TELEGRAM_CHAT_ID_SSM   = aws_ssm_parameter.telegram_chat_id.name
+      TELEGRAM_BOT_TOKEN_SSM  = aws_ssm_parameter.telegram_bot_token.name
+      TELEGRAM_CHAT_ID_SSM    = aws_ssm_parameter.telegram_chat_id.name
+      # DISCORD_WEBHOOK_URL_SSM = aws_ssm_parameter.discord_webhook_url.name
     }
   }
 }

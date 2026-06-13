@@ -135,15 +135,16 @@
             </div>
 
             <div class="tab-panel" id="panel-five">
-                <h2>Phase 5: Scraper Feature Enhancements (Upcoming)</h2>
+                <h2>Phase 5: Scraper Feature Enhancements</h2>
                 <p><strong>Goal:</strong> Add intelligent enrichment, filtering, and resilience features to the pipeline.</p>
                 <ul class="tasks">
-                    <li>□ <strong>Data Models:</strong> Extend <code>shared/models.py</code> with <code>EnrichedPayload</code> and <code>EnrichedHeadlineItem</code>.</li>
-                    <li>□ <strong>Shared Utilities:</strong> Implement circuit breaker in the <code>shared/</code> module.</li>
-                    <li>□ <strong>ScraperWorker:</strong> Add header rotation, Redis deduplication caching, and implement separate extraction for "Trending Tickers".</li>
-                    <li>□ <strong>EnrichmentWorker:</strong> Create a new standalone worker that consumes extraction payloads, performs NLP ticker extraction, scores VADER sentiment, and outputs enriched payloads.</li>
-                    <li>□ <strong>NotificationWorker:</strong> Update to consume enriched payloads. Implement per-channel contextual filtering based on extracted tickers and sentiment scores.</li>
+                    <li style="color: var(--accent);">✓ <strong>Data Models:</strong> Extend <code>shared/models.py</code> with <code>EnrichedPayload</code> and <code>EnrichedHeadlineItem</code>.</li>
+                    <li style="color: var(--accent);">✓ <strong>Shared Utilities:</strong> Implement circuit breaker in the <code>shared/</code> module.</li>
+                    <li style="color: var(--accent);">✓ <strong>ScraperWorker:</strong> Add header rotation, DynamoDB deduplication caching, and implement separate extraction for "Trending Tickers".</li>
+                    <li style="color: var(--accent);">✓ <strong>EnrichmentWorker:</strong> Create a new standalone worker that consumes extraction payloads, performs NLP ticker extraction, scores VADER sentiment, and outputs enriched payloads.</li>
+                    <li style="color: var(--accent);">✓ <strong>NotificationWorker:</strong> Update to consume enriched payloads. Implement per-channel contextual filtering based on extracted tickers and sentiment scores.</li>
                 </ul>
+                <p><a href="./05-implementation-logs/05-phase-5.md" style="color: var(--accent);">📋 Implementation Log: Phase 5 - Scraper Feature Enhancements</a></p>
             </div>
         </div>
     </div>

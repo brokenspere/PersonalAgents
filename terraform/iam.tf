@@ -33,7 +33,7 @@ resource "aws_iam_policy" "scraper_sqs_policy" {
         Action = [
           "sqs:SendMessage"
         ]
-        Resource = aws_sqs_queue.notification_queue.arn
+        Resource = aws_sqs_queue.enrichment_queue.arn
       }
     ]
   })
@@ -42,6 +42,85 @@ resource "aws_iam_policy" "scraper_sqs_policy" {
 resource "aws_iam_role_policy_attachment" "scraper_sqs_attachment" {
   role       = aws_iam_role.scraper_lambda_role.name
   policy_arn = aws_iam_policy.scraper_sqs_policy.arn
+}
+
+resource "aws_iam_policy" "scraper_dynamodb_policy" {
+  name        = "${var.project_name}-scraper-dynamodb-policy-${var.environment}"
+  description = "Allows scraper lambda to access deduplication cache"
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "dynamodb:GetItem",
+          "dynamodb:PutItem"
+        ]
+        Resource = aws_dynamodb_table.scraper_cache.arn
+      }
+    ]
+  })
+}
+
+resource "aws_iam_role_policy_attachment" "scraper_dynamodb_attachment" {
+  role       = aws_iam_role.scraper_lambda_role.name
+  policy_arn = aws_iam_policy.scraper_dynamodb_policy.arn
+}
+
+# Enrichment Lambda IAM Role
+resource "aws_iam_role" "enrichment_lambda_role" {
+  name = "${var.project_name}-enrichment-role-${var.environment}"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action = "sts:AssumeRole"
+        Effect = "Allow"
+        Principal = {
+          Service = "lambda.amazonaws.com"
+        }
+      }
+    ]
+  })
+}
+
+resource "aws_iam_role_policy_attachment" "enrichment_basic_execution" {
+  role       = aws_iam_role.enrichment_lambda_role.name
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+}
+
+resource "aws_iam_policy" "enrichment_sqs_policy" {
+  name        = "${var.project_name}-enrichment-sqs-policy-${var.environment}"
+  description = "Allows enrichment lambda to read from enrichment queue and publish to notification queue"
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "sqs:ReceiveMessage",
+          "sqs:DeleteMessage",
+          "sqs:GetQueueAttributes"
+        ]
+        Resource = aws_sqs_queue.enrichment_queue.arn
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "sqs:SendMessage"
+        ]
+        Resource = aws_sqs_queue.notification_queue.arn
+      }
+    ]
+  })
+}
+
+resource "aws_iam_role_policy_attachment" "enrichment_sqs_attachment" {
+  role       = aws_iam_role.enrichment_lambda_role.name
+  policy_arn = aws_iam_policy.enrichment_sqs_policy.arn
 }
 
 # Notification Lambda IAM Role
@@ -107,7 +186,8 @@ resource "aws_iam_policy" "notification_ssm_policy" {
         ]
         Resource = [
           aws_ssm_parameter.telegram_bot_token.arn,
-          aws_ssm_parameter.telegram_chat_id.arn
+          aws_ssm_parameter.telegram_chat_id.arn#,
+          # aws_ssm_parameter.discord_webhook_url.arn
         ]
       }
     ]

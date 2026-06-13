@@ -25,3 +25,18 @@ class ExtractionPayload(BaseModel):
     market: Optional[str] = Field(None, description="Market identifier")
     timestamp: datetime = Field(default_factory=utc_now)
     items: List[HeadlineItem] = Field(default_factory=list, description="Array of headline/URL objects")
+    trending_tickers: List[str] = Field(default_factory=list, description="Array of trending tickers")
+
+class EnrichedHeadlineItem(HeadlineItem):
+    sentiment_score: float = Field(default=0.0, description="VADER sentiment score")
+    extracted_tickers: List[str] = Field(default_factory=list, description="List of tickers extracted from the headline")
+
+class EnrichedPayload(BaseModel):
+    """
+    Data published by EnrichmentWorker with NLP insights.
+    """
+    source: str
+    market: Optional[str]
+    timestamp: datetime = Field(default_factory=utc_now)
+    items: List[EnrichedHeadlineItem] = Field(default_factory=list)
+    trending_tickers: List[str] = Field(default_factory=list)
