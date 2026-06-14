@@ -1,6 +1,7 @@
 import pytest
-from unittest.mock import patch
-from workers.scraper.tasks import handle_market_event, extract_headlines_from_html
+from unittest.mock import patch, MagicMock
+from workers.scraper.tasks import handle_market_event
+from workers.scraper.service import extract_headlines_from_html, fetch_yahoo_finance_html, YAHOO_FINANCE_URL
 from shared.models import Event
 
 SAMPLE_HTML = """
@@ -20,8 +21,25 @@ def test_extract_headlines_from_html():
     # Expecting 2 items due to filtering logic
     assert len(items) == 2
     assert items[0].title == "This is a valid news headline that is long enough"
-    assert items[0].url.startswith("https://finance.yahoo.com/news/")
+    # Ensure it uses the correct base domain for relative links
+    assert items[0].url == "https://finance.yahoo.com/news/test-news-article-123.html"
     assert items[1].title == "Watch this video about market trends right now"
+    assert items[1].url == "https://finance.yahoo.com/video/test-video.html"
+
+@patch('requests.get')
+def test_fetch_yahoo_finance_html(mock_get):
+    mock_response = MagicMock()
+    mock_response.text = "<html></html>"
+    mock_response.raise_for_status.return_value = None
+    mock_get.return_value = mock_response
+    
+    html = fetch_yahoo_finance_html()
+    
+    assert html == "<html></html>"
+    mock_get.assert_called_once()
+    args, kwargs = mock_get.call_args
+    assert args[0] == YAHOO_FINANCE_URL
+    assert 'User-Agent' in kwargs['headers']
 
 @patch('workers.scraper.tasks.fetch_yahoo_finance_html')
 @patch('workers.scraper.tasks.app.send_task')
