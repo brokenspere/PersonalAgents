@@ -16,6 +16,10 @@ _Avoid_: Formatted message, Rendered text
 Structured data that has been processed by an enrichment step (e.g., added sentiment scores, extracted entities) and is ready for filtering or notification.
 _Avoid_: Extraction Payload (when referring to processed data)
 
+**Analyzed Payload**:
+Structured data that has been enriched and then further evaluated by an LLM or analysis agent to include insights, impact scores, and recommendations. This is typically published by the AnalystWorker.
+_Avoid_: Analysis Payload, Insights Payload
+
 **Worker**:
 A component that consumes from or publishes to the message broker (e.g., ScraperWorker, NotificationWorker) to perform specialized tasks.
 _Avoid_: Service

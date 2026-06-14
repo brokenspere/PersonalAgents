@@ -20,8 +20,9 @@ To ensure scalability and prevent bottlenecks, the system will use a decoupled, 
 
 1. **Scheduler:** Fires a `market.open` or `market.close` event.
 2. **Message Broker:** Receives the event and routes it to subscribed agents.
-3. **Scraper Agent:** Receives the trigger, scrapes the data, and publishes a `news.ready` event back to the broker.
-4. **Notification Service:** Listens for `news.ready` events and pushes the payload to external APIs.
+3. **Scraper Agent:** Receives the trigger, scrapes the data, and publishes an extraction payload to the broker.
+4. **Enrichment & Analysis:** Secondary agents enrich the text and use LLMs to perform analysis, pushing to subsequent queues.
+5. **Notification Service:** Listens for the final analyzed events and pushes the payload to external APIs.
 
 ### 3.2. Tech Stack Recommendations
 

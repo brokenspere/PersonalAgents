@@ -45,7 +45,8 @@
     #tab-one:checked ~ .tabs-nav label[for="tab-one"],
     #tab-two:checked ~ .tabs-nav label[for="tab-two"],
     #tab-three:checked ~ .tabs-nav label[for="tab-three"],
-    #tab-four:checked ~ .tabs-nav label[for="tab-four"] {
+    #tab-four:checked ~ .tabs-nav label[for="tab-four"],
+    #tab-five:checked ~ .tabs-nav label[for="tab-five"] {
       background: var(--surface);
       color: var(--accent);
       border-bottom: 1px solid var(--surface);
@@ -57,7 +58,8 @@
     #tab-one:checked ~ .content #panel-one,
     #tab-two:checked ~ .content #panel-two,
     #tab-three:checked ~ .content #panel-three,
-    #tab-four:checked ~ .content #panel-four {
+    #tab-four:checked ~ .content #panel-four,
+    #tab-five:checked ~ .content #panel-five {
       display: block;
     }
   </style>
@@ -70,12 +72,14 @@
         <input type="radio" name="tabs" id="tab-two">
         <input type="radio" name="tabs" id="tab-three">
         <input type="radio" name="tabs" id="tab-four">
+        <input type="radio" name="tabs" id="tab-five">
 
         <div class="tabs-nav">
             <label for="tab-one">1. Event Payloads</label>
             <label for="tab-two">2. ScraperWorker</label>
             <label for="tab-three">3. EnrichmentWorker</label>
-            <label for="tab-four">4. NotificationWorker</label>
+            <label for="tab-four">4. AnalystAgent</label>
+            <label for="tab-five">5. NotificationWorker</label>
         </div>
 
         <div class="content">
@@ -87,16 +91,18 @@
   "timestamp": "2026-06-11T13:30:00Z",
   "event_type": "market.open"
 }</code></pre>
-                <p><strong>Enriched Payload:</strong> Output from the EnrichmentWorker, providing context-rich data ready for filtering.</p>
+                <p><strong>Analyzed Payload:</strong> Output from the AnalystAgent, ready for notification.</p>
                 <pre><code>{
   "source": "yahoo_finance_news",
-  "timestamp": "2026-06-11T13:30:10Z",
+  "timestamp": "2026-06-11T13:30:15Z",
   "items": [
     {
       "title": "Market rallies on open",
       "url": "https://finance.yahoo.com/news/...",
       "tickers": ["AAPL", "TSLA"],
-      "sentiment_score": 0.85
+      "sentiment_score": 0.85,
+      "insights": "Strong opening driven by tech sector performance...",
+      "impact_score": 0.9
     }
   ]
 }</code></pre>
@@ -124,8 +130,18 @@
             </div>
 
             <div class="tab-panel" id="panel-four">
+                <h2>AnalystAgent Logic</h2>
+                <p>Triggered by enriched payloads from the EnrichmentWorker.</p>
+                <ul>
+                    <li><strong>Data Augmentation:</strong> Uses <code>yfinance</code> to fetch technical and fundamental data for the extracted tickers.</li>
+                    <li><strong>Analysis Execution:</strong> Queries the Google Gemini API, combining the headline, sentiment, and fetched market data to generate insights and impact scores.</li>
+                    <li><strong>Output:</strong> Transforms the data into an <strong>Analyzed Payload</strong> and publishes it to the broker.</li>
+                </ul>
+            </div>
+
+            <div class="tab-panel" id="panel-five">
                 <h2>NotificationWorker Logic & Fault Tolerance</h2>
-                <p>Triggered by enriched payloads.</p>
+                <p>Triggered by analyzed payloads.</p>
                 <ul>
                     <li><strong>Contextual Filtering:</strong> Evaluates incoming payloads against channel-specific rules (e.g., specific tickers or sentiment thresholds) before proceeding.</li>
                     <li><strong>Formatting:</strong> Applies platform-specific formatting (e.g., Markdown for Discord, HTML for Telegram) based on the channel context.</li>
