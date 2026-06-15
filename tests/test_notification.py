@@ -8,31 +8,34 @@ from workers.notification.service import (
     filter_for_telegram, 
     # filter_for_discord
 )
-from shared.models import EnrichedPayload, EnrichedHeadlineItem
+from shared.models import AnalyzedPayload, AnalyzedHeadlineItem
 
 def get_sample_payload():
-    return EnrichedPayload(
+    return AnalyzedPayload(
         source='yahoo_finance',
         market='NYSE',
         trending_tickers=['AAPL', 'MSFT'],
         items=[
-            EnrichedHeadlineItem(
+            AnalyzedHeadlineItem(
                 title='Market is up today significantly', 
                 url='https://finance.yahoo.com/news/up',
                 extracted_tickers=['SPY'],
-                sentiment_score=0.8
+                sentiment_score=0.8,
+                analysis='Market looks good'
             ),
-            EnrichedHeadlineItem(
+            AnalyzedHeadlineItem(
                 title='Tech stocks rally continues', 
                 url='https://finance.yahoo.com/news/tech',
                 extracted_tickers=['AAPL', 'MSFT'],
-                sentiment_score=0.1 # Not impactful
+                sentiment_score=0.1, # Not impactful, but has analysis? Let's make it have no analysis
+                analysis=None
             ),
-            EnrichedHeadlineItem(
+            AnalyzedHeadlineItem(
                 title='Company goes bankrupt', 
                 url='https://finance.yahoo.com/news/bad',
                 extracted_tickers=[],
-                sentiment_score=-0.9 # Impactful
+                sentiment_score=-0.9, # Impactful
+                analysis=None
             )
         ]
     )

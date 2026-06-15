@@ -30,12 +30,17 @@ def format_telegram_message(payload: AnalyzedPayload, items: List[AnalyzedHeadli
     market = html.escape(payload.market) if payload.market else "Unknown"
     message = f"📢 <b>Impactful updates from {source} for {market}</b>:\n\n"
     if payload.trending_tickers:
-        message += f"🔥 <b>Trending Tickers:</b> {', '.join(payload.trending_tickers)}\n\n"
+        escaped_trending = [html.escape(t) for t in payload.trending_tickers]
+        message += f"🔥 <b>Trending Tickers:</b> {', '.join(escaped_trending)}\n\n"
         
     for item in items:
         title = html.escape(item.title)
         url = html.escape(str(item.url))
-        tickers = f" [Tags: {', '.join(item.extracted_tickers)}]" if item.extracted_tickers else ""
+        if item.extracted_tickers:
+            escaped_tickers = [html.escape(t) for t in item.extracted_tickers]
+            tickers = f" [Tags: {', '.join(escaped_tickers)}]"
+        else:
+            tickers = ""
         message += f"🔹 <a href=\"{url}\">{title}</a>{tickers} (Sentiment: {item.sentiment_score:.2f})\n"
         if item.analysis:
             message += f"💡 <i>Analysis:</i> {html.escape(item.analysis)}\n"

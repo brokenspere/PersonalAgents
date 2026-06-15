@@ -86,6 +86,11 @@ def send_telegram_notification_aws(message: str) -> None:
         'parse_mode': 'HTML',
         'disable_web_page_preview': True
     }, timeout=10)
+    
+    if not response.ok:
+        logger.error(f"Telegram API response: {response.text}")
+        logger.error(f"Failed message content: {message}")
+        
     response.raise_for_status()
 
 # def send_discord_notification_aws(message: str) -> None:
