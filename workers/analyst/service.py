@@ -63,7 +63,7 @@ def analyze_with_gemini(text: str, market_data: str, sentiment: float, api_key: 
         logger.debug(f"Gemini Prompt: {prompt}")
         
         response = client.models.generate_content(
-            model='gemini-3.5-flash',
+            model='gemini-2.5-flash',
             contents=prompt,
             config=types.GenerateContentConfig(
                 system_instruction=AGENT_INSTRUCTIONS
@@ -74,7 +74,7 @@ def analyze_with_gemini(text: str, market_data: str, sentiment: float, api_key: 
         return response.text
     except Exception as e:
         logger.error(f"Gemini API analysis failed: {e}")
-        return None
+        return f"[Error: LLM Analysis Failed - {str(e)}]"
 
 def analyze_payload(payload: EnrichedPayload, api_key: Optional[str]) -> AnalyzedPayload:
     """
