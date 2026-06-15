@@ -51,7 +51,12 @@ jobs:
       - name: Package Lambda Deployment Zip
         run: |
           mkdir -p package
-          pip install -r requirements.txt -t package/
+          pip install -r requirements.txt -t package/ \
+            --platform manylinux2014_x86_64 \
+            --implementation cp \
+            --python-version 3.11 \
+            --only-binary=:all: \
+            --upgrade
           
           # Remove libraries already provided by AWS Lambda runtime
           rm -rf package/boto3* package/botocore* package/s3transfer*
