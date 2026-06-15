@@ -40,3 +40,16 @@ class EnrichedPayload(BaseModel):
     timestamp: datetime = Field(default_factory=utc_now)
     items: List[EnrichedHeadlineItem] = Field(default_factory=list)
     trending_tickers: List[str] = Field(default_factory=list)
+
+class AnalyzedHeadlineItem(EnrichedHeadlineItem):
+    analysis: Optional[str] = Field(None, description="Thai language analysis of the headline and market data")
+
+class AnalyzedPayload(BaseModel):
+    """
+    Data published by AnalystAgent with LLM insights.
+    """
+    source: str
+    market: Optional[str]
+    timestamp: datetime = Field(default_factory=utc_now)
+    items: List[AnalyzedHeadlineItem] = Field(default_factory=list)
+    trending_tickers: List[str] = Field(default_factory=list)

@@ -41,7 +41,7 @@ resource "aws_lambda_function" "enrichment_function" {
 
   environment {
     variables = {
-      NOTIFICATION_QUEUE_URL = aws_sqs_queue.notification_queue.url
+      ANALYST_QUEUE_URL = aws_sqs_queue.analyst_queue.url
     }
   }
 }
@@ -49,6 +49,30 @@ resource "aws_lambda_function" "enrichment_function" {
 resource "aws_lambda_event_source_mapping" "enrichment_sqs_trigger" {
   event_source_arn = aws_sqs_queue.enrichment_queue.arn
   function_name    = aws_lambda_function.enrichment_function.arn
+  batch_size       = 1
+}
+
+resource "aws_lambda_function" "analyst_function" {
+  function_name    = "${var.project_name}-analyst-${var.environment}"
+  role             = aws_iam_role.analyst_lambda_role.arn
+  handler          = "workers.analyst.handlers.sqs_event_handler"
+  runtime          = "python3.11"
+  filename         = data.archive_file.dummy_payload.output_path
+  source_code_hash = data.archive_file.dummy_payload.output_base64sha256
+  timeout          = 120
+  memory_size      = 512
+
+  environment {
+    variables = {
+      NOTIFICATION_QUEUE_URL = aws_sqs_queue.notification_queue.url
+      GEMINI_API_KEY_SSM     = aws_ssm_parameter.gemini_api_key.name
+    }
+  }
+}
+
+resource "aws_lambda_event_source_mapping" "analyst_sqs_trigger" {
+  event_source_arn = aws_sqs_queue.analyst_queue.arn
+  function_name    = aws_lambda_function.analyst_function.arn
   batch_size       = 1
 }
 

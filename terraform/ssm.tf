@@ -30,3 +30,14 @@ resource "aws_ssm_parameter" "telegram_chat_id" {
 #     ignore_changes = [value]
 #   }
 # }
+
+resource "aws_ssm_parameter" "gemini_api_key" {
+  name        = "/${var.environment}/${var.project_name}/gemini_api_key"
+  description = "Google Gemini API Key for Analyst Agent"
+  type        = "SecureString"
+  value       = "dummy_value_change_me"
+
+  lifecycle {
+    ignore_changes = [value]
+  }
+}

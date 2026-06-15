@@ -11,7 +11,7 @@ logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
 sqs_client = boto3.client('sqs')
-NOTIFICATION_QUEUE_URL = os.environ.get('NOTIFICATION_QUEUE_URL')
+ANALYST_QUEUE_URL = os.environ.get('ANALYST_QUEUE_URL')
 
 def sqs_event_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
     """
@@ -33,14 +33,14 @@ def sqs_event_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                 trending_tickers=payload.trending_tickers
             )
             
-            if NOTIFICATION_QUEUE_URL:
+            if ANALYST_QUEUE_URL:
                 sqs_client.send_message(
-                    QueueUrl=NOTIFICATION_QUEUE_URL,
+                    QueueUrl=ANALYST_QUEUE_URL,
                     MessageBody=enriched_payload.model_dump_json()
                 )
-                logger.info(f"Enriched and forwarded payload to Notification Queue. Items: {len(enriched_items)}")
+                logger.info(f"Enriched and forwarded payload to Analyst Queue. Items: {len(enriched_items)}")
             else:
-                logger.warning("NOTIFICATION_QUEUE_URL is not set. Discarding enriched payload.")
+                logger.warning("ANALYST_QUEUE_URL is not set. Discarding enriched payload.")
                 
         except Exception as exc:
             logger.exception("Error processing record: %s", exc)

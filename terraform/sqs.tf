@@ -25,3 +25,17 @@ resource "aws_sqs_queue" "enrichment_queue" {
     maxReceiveCount     = 5
   })
 }
+
+resource "aws_sqs_queue" "analyst_dlq" {
+  name = "${var.project_name}-analyst-dlq-${var.environment}"
+}
+
+resource "aws_sqs_queue" "analyst_queue" {
+  name                       = "${var.project_name}-analyst-${var.environment}"
+  visibility_timeout_seconds = 120 # longer timeout for LLM calls
+  
+  redrive_policy = jsonencode({
+    deadLetterTargetArn = aws_sqs_queue.analyst_dlq.arn
+    maxReceiveCount     = 5
+  })
+}

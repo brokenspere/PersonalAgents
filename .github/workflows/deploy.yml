@@ -34,6 +34,10 @@ jobs:
         working-directory: ./terraform
         run: terraform init
 
+      - name: Terraform Plan
+        working-directory: ./terraform
+        run: terraform plan -var="environment=${{ env.ENVIRONMENT }}" -var="project_name=${{ env.PROJECT_NAME }}"
+
       - name: Terraform Apply
         working-directory: ./terraform
         run: terraform apply -auto-approve -var="environment=${{ env.ENVIRONMENT }}" -var="project_name=${{ env.PROJECT_NAME }}"
@@ -48,7 +52,7 @@ jobs:
         run: |
           mkdir -p package
           pip install -r requirements.txt -t package/
-          cp -r shared scheduler workers package/
+          cp -r shared scheduler workers .gemini package/
           cd package
           zip -r ../deployment.zip .
           cd ..
@@ -64,6 +68,13 @@ jobs:
         run: |
           aws lambda update-function-code \
             --function-name "${{ env.PROJECT_NAME }}-enrichment-${{ env.ENVIRONMENT }}" \
+            --zip-file fileb://deployment.zip \
+            --publish
+
+      - name: Update Analyst Lambda Code
+        run: |
+          aws lambda update-function-code \
+            --function-name "${{ env.PROJECT_NAME }}-analyst-${{ env.ENVIRONMENT }}" \
             --zip-file fileb://deployment.zip \
             --publish
 

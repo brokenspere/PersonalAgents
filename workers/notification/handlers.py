@@ -6,7 +6,7 @@ import requests
 from botocore.config import Config
 from typing import Dict, Any
 
-from shared.models import EnrichedPayload
+from shared.models import AnalyzedPayload
 from workers.notification.service import (
     filter_for_telegram, # filter_for_discord, 
     format_telegram_message, # format_discord_message
@@ -105,9 +105,9 @@ def sqs_event_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
     for record in event.get('Records', []):
         try:
             body = json.loads(record['body'])
-            payload = EnrichedPayload.model_validate(body)
+            payload = AnalyzedPayload.model_validate(body)
         except Exception as exc:
-            logger.exception("Failed to parse enriched payload: %s", exc)
+            logger.exception("Failed to parse analyzed payload: %s", exc)
             continue # Skip this record, avoid poison pill loop
             
         if not payload.items and not payload.trending_tickers:
