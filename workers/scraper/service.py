@@ -10,7 +10,7 @@ from shared.circuit_breaker import CircuitBreaker
 
 logger = logging.getLogger(__name__)
 
-YAHOO_FINANCE_URL = "https://finance.yahoo.com/news/"
+YAHOO_FINANCE_URL = "https://finance.yahoo.com/topic/stock-market-news/"
 
 USER_AGENTS = [
     'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
@@ -34,18 +34,32 @@ def extract_headlines_from_html(html_content: str, max_items: int = 5) -> List[H
     """
     soup = BeautifulSoup(html_content, 'html.parser')
     items = []
+    seen_titles = set()
 
-    for a_tag in soup.find_all('a', href=True):
-        title = a_tag.get_text(strip=True)
-        href = a_tag['href']
+    # In modern Yahoo Finance, headlines are typically inside <h3> tags wrapped in <a> tags
+    for h3 in soup.find_all('h3'):
+        title = h3.get_text(strip=True)
+        if not title or len(title) < 20 or title in seen_titles:
+            continue
+            
+        parent_a = h3.find_parent('a')
+        if not parent_a or 'href' not in parent_a.attrs:
+            continue
+            
+        href = parent_a['href']
+        
+        # Filter out obvious non-news links like markets/options
+        if 'markets/options' in href or 'deals/breaking-news' in href:
+            continue
+            
+        if href.startswith('/'):
+            href = f"https://finance.yahoo.com{href}"
 
-        if title and len(title) > 20 and ('news' in href or 'video' in href or '/m/' in href):
-            if href.startswith('/'):
-                href = f"https://finance.yahoo.com{href}"
-
-            items.append(HeadlineItem(title=title, url=href))
-            if len(items) >= max_items:
-                break
+        seen_titles.add(title)
+        items.append(HeadlineItem(title=title, url=href))
+        
+        if len(items) >= max_items:
+            break
 
     return items
 
