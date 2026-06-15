@@ -48,6 +48,7 @@ def analyze_with_gemini(text: str, market_data: str, sentiment: float, api_key: 
     Outputs exclusively in Thai language.
     """
     if not api_key:
+        logger.warning("API key is missing, skipping Gemini analysis.")
         return None
 
     try:
@@ -58,6 +59,8 @@ def analyze_with_gemini(text: str, market_data: str, sentiment: float, api_key: 
         VADER Sentiment Score: {sentiment}
         Market Data Context: {market_data}
         """
+        logger.info(f"Calling Gemini API for headline: '{text[:30]}...'")
+        logger.debug(f"Gemini Prompt: {prompt}")
         
         response = client.models.generate_content(
             model='gemini-3.5-flash',
@@ -66,6 +69,8 @@ def analyze_with_gemini(text: str, market_data: str, sentiment: float, api_key: 
                 system_instruction=AGENT_INSTRUCTIONS
             )
         )
+        logger.info("Gemini API call successful.")
+        logger.debug(f"Gemini Response: {response.text}")
         return response.text
     except Exception as e:
         logger.error(f"Gemini API analysis failed: {e}")
@@ -75,15 +80,20 @@ def analyze_payload(payload: EnrichedPayload, api_key: Optional[str]) -> Analyze
     """
     Augments the enriched payload with financial data and LLM analysis.
     """
+    logger.info(f"Starting analysis for payload from {payload.source}. Received {len(payload.items)} items and {len(payload.trending_tickers)} trending tickers.")
     analyzed_items: List[AnalyzedHeadlineItem] = []
     
     for item in payload.items:
+        logger.info(f"Processing item: '{item.title}'")
+        logger.info(f"Extracted tickers for item: {item.extracted_tickers}")
+        
         market_context_parts = []
         for ticker in item.extracted_tickers:
             data = fetch_market_data(ticker)
             market_context_parts.append(data)
             
         market_data_str = " | ".join(market_context_parts) if market_context_parts else "No specific ticker data."
+        logger.info(f"Market data context: {market_data_str}")
         
         analysis = None
         if api_key:
@@ -95,6 +105,7 @@ def analyze_payload(payload: EnrichedPayload, api_key: Optional[str]) -> Analyze
             )
         else:
             analysis = "[Simulated Analysis - API Key Missing] ข่าวนี้อาจส่งผลกระทบต่อตลาด (This news might impact the market)."
+            logger.info("Simulated analysis applied due to missing API key.")
 
         analyzed_item = AnalyzedHeadlineItem(
             title=item.title,
@@ -104,7 +115,9 @@ def analyze_payload(payload: EnrichedPayload, api_key: Optional[str]) -> Analyze
             analysis=analysis
         )
         analyzed_items.append(analyzed_item)
+        logger.info(f"Successfully analyzed item: '{item.title}'")
         
+    logger.info(f"Finished analysis. Returning payload with {len(analyzed_items)} analyzed items.")
     return AnalyzedPayload(
         source=payload.source,
         market=payload.market,
