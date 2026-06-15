@@ -52,6 +52,15 @@ jobs:
         run: |
           mkdir -p package
           pip install -r requirements.txt -t package/
+          
+          # Remove libraries already provided by AWS Lambda runtime
+          rm -rf package/boto3* package/botocore* package/s3transfer*
+          
+          # Strip unnecessary files to reduce package size below the 50MB direct upload limit
+          find package/ -type d -name "__pycache__" -exec rm -rf {} +
+          find package/ -type d -name "*.dist-info" -exec rm -rf {} +
+          find package/ -type d -name "tests" -exec rm -rf {} +
+          
           cp -r shared scheduler workers .gemini package/
           cd package
           zip -r ../deployment.zip .
