@@ -25,14 +25,18 @@ def filter_for_discord(items: List[AnalyzedHeadlineItem]) -> List[AnalyzedHeadli
     """
     return [item for item in items if item.extracted_tickers]
 
-def format_telegram_message(payload: AnalyzedPayload, items: List[AnalyzedHeadlineItem]) -> str:
+def format_telegram_message(payload: AnalyzedPayload, items: List[AnalyzedHeadlineItem]) -> List[str]:
     source = html.escape(payload.source)
     market = html.escape(payload.market) if payload.market else "Unknown"
-    message = f"📢 <b>Impactful updates from {source} for {market}</b>:\n\n"
+    
+    messages = []
+    header = f"📢 <b>Impactful updates from {source} for {market}</b>:\n\n"
     if payload.trending_tickers:
         escaped_trending = [html.escape(t) for t in payload.trending_tickers]
-        message += f"🔥 <b>Trending Tickers:</b> {', '.join(escaped_trending)}\n\n"
+        header += f"🔥 <b>Trending Tickers:</b> {', '.join(escaped_trending)}\n\n"
         
+    current_message = header
+    
     for item in items:
         title = html.escape(item.title)
         url = html.escape(str(item.url))
@@ -41,11 +45,28 @@ def format_telegram_message(payload: AnalyzedPayload, items: List[AnalyzedHeadli
             tickers = f" [Tags: {', '.join(escaped_tickers)}]"
         else:
             tickers = ""
-        message += f"🔹 <a href=\"{url}\">{title}</a>{tickers} (Sentiment: {item.sentiment_score:.2f})\n"
+        
+        item_text = f"🔹 <a href=\"{url}\">{title}</a>{tickers} (Sentiment: {item.sentiment_score:.2f})\n"
         if item.analysis:
-            message += f"💡 <i>Analysis:</i> {html.escape(item.analysis)}\n"
-        message += "\n"
-    return message
+            analysis_text = html.escape(item.analysis)
+            if len(analysis_text) > 2000:
+                analysis_text = analysis_text[:1997] + "..."
+            item_text += f"💡 <i>Analysis:</i> {analysis_text}\n"
+        item_text += "\n"
+        
+        # Telegram max length is 4096. 4000 is a safe threshold.
+        if len(current_message) + len(item_text) > 4000:
+            if current_message.strip():
+                messages.append(current_message)
+            # Continuation header
+            current_message = f"📢 <b>Updates from {source} for {market} (cont.)</b>:\n\n" + item_text
+        else:
+            current_message += item_text
+            
+    if current_message.strip():
+        messages.append(current_message)
+        
+    return messages
 
 # def format_discord_message(payload: AnalyzedPayload, items: List[AnalyzedHeadlineItem]) -> str:
 #     source = payload.source

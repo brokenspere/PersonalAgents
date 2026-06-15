@@ -57,8 +57,11 @@ def test_filter_for_telegram():
 def test_format_telegram_message():
     payload = get_sample_payload()
     filtered = filter_for_telegram(payload.items)
-    message = format_telegram_message(payload, filtered)
+    messages = format_telegram_message(payload, filtered)
 
+    assert len(messages) > 0
+    message = messages[0]
+    
     assert "Impactful updates from yahoo_finance for NYSE" in message
     assert "Trending Tickers:</b> AAPL, MSFT" in message
     assert "Market is up today significantly" in message
@@ -90,7 +93,8 @@ def test_sqs_event_handler_success(mock_telegram):
     
     sqs_event_handler(event, None)
     
-    mock_telegram.assert_called_once()
+    # We have 1 message chunk because the payload is small
+    assert mock_telegram.call_count == 1
     # mock_discord.assert_called_once()
 
 # @patch('workers.notification.handlers.send_discord_notification_aws')

@@ -122,10 +122,11 @@ def sqs_event_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
         # Telegram filtering and sending
         tg_items = filter_for_telegram(payload.items)
         if tg_items or payload.trending_tickers:
-            tg_message = format_telegram_message(payload, tg_items)
+            tg_messages = format_telegram_message(payload, tg_items)
             try:
-                send_telegram_notification_aws(tg_message)
-                logger.info(f"Successfully sent Telegram notification with {len(tg_items)} items.")
+                for msg in tg_messages:
+                    send_telegram_notification_aws(msg)
+                logger.info(f"Successfully sent Telegram notification with {len(tg_items)} items across {len(tg_messages)} messages.")
             except requests.RequestException as exc:
                 logger.warning(f"Telegram notification failed: {exc}")
                 raise # Fail the function to trigger SQS visibility timeout/retry
