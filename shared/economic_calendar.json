@@ -1,0 +1,19 @@
+{
+  "events": [
+    {
+      "date": "2026-06-17",
+      "event": "FOMC Meeting",
+      "impact": "High"
+    },
+    {
+      "date": "2026-06-18",
+      "event": "CPI Release",
+      "impact": "High"
+    },
+    {
+      "date": "2026-07-03",
+      "event": "Non-Farm Payrolls",
+      "impact": "High"
+    }
+  ]
+}

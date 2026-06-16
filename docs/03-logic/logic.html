@@ -46,7 +46,8 @@
     #tab-two:checked ~ .tabs-nav label[for="tab-two"],
     #tab-three:checked ~ .tabs-nav label[for="tab-three"],
     #tab-four:checked ~ .tabs-nav label[for="tab-four"],
-    #tab-five:checked ~ .tabs-nav label[for="tab-five"] {
+    #tab-five:checked ~ .tabs-nav label[for="tab-five"],
+    #tab-six:checked ~ .tabs-nav label[for="tab-six"] {
       background: var(--surface);
       color: var(--accent);
       border-bottom: 1px solid var(--surface);
@@ -59,7 +60,8 @@
     #tab-two:checked ~ .content #panel-two,
     #tab-three:checked ~ .content #panel-three,
     #tab-four:checked ~ .content #panel-four,
-    #tab-five:checked ~ .content #panel-five {
+    #tab-five:checked ~ .content #panel-five,
+    #tab-six:checked ~ .content #panel-six {
       display: block;
     }
   </style>
@@ -73,13 +75,15 @@
         <input type="radio" name="tabs" id="tab-three">
         <input type="radio" name="tabs" id="tab-four">
         <input type="radio" name="tabs" id="tab-five">
+        <input type="radio" name="tabs" id="tab-six">
 
         <div class="tabs-nav">
             <label for="tab-one">1. Event Payloads</label>
             <label for="tab-two">2. ScraperWorker</label>
             <label for="tab-three">3. EnrichmentWorker</label>
             <label for="tab-four">4. AnalystAgent</label>
-            <label for="tab-five">5. NotificationWorker</label>
+            <label for="tab-five">5. ScreenerAgent</label>
+            <label for="tab-six">6. NotificationWorker</label>
         </div>
 
         <div class="content">
@@ -103,6 +107,22 @@
       "sentiment_score": 0.85,
       "insights": "Strong opening driven by tech sector performance...",
       "impact_score": 0.9
+    }
+  ]
+}</code></pre>
+                <p><strong>Screened Payload:</strong> Output from the ScreenerAgent, ready for notification.</p>
+                <pre><code>{
+  "source": "screener_agent",
+  "timestamp": "2026-06-11T16:15:00Z",
+  "items": [
+    {
+      "ticker": "NVDA",
+      "price": 120.50,
+      "sma_20": 115.00,
+      "sma_50": 105.00,
+      "sma_200": 90.00,
+      "trading_plan": "Buy Limit at $118. Stop Loss at $110. Take Profit at $135.",
+      "confidence": "High"
     }
   ]
 }</code></pre>
@@ -140,8 +160,20 @@
             </div>
 
             <div class="tab-panel" id="panel-five">
+                <h2>ScreenerAgent Logic</h2>
+                <p>Triggered directly by <code>market.close</code> events.</p>
+                <ul>
+                    <li><strong>Data Fetching:</strong> Uses <code>yfinance</code> to pull OHLCV data for a predefined watchlist of tickers.</li>
+                    <li><strong>Event Risk Check:</strong> Checks a static <code>shared/economic_calendar.json</code> for upcoming macroeconomic events (within 48 hours) and uses <code>yfinance</code> to check for upcoming company earnings dates. Sets a risk flag if events are found.</li>
+                    <li><strong>Python Filtering:</strong> Strictly calculates technical indicators (e.g., SMA 20, 50, 200) using Pandas and filters out any tickers that do not meet the strict technical criteria (e.g., perfect uptrend alignment).</li>
+                    <li><strong>LLM Planning:</strong> Passes the strictly filtered list (including event risk flags) to the Gemini LLM to generate a human-readable trading plan (entry, stop loss, take profit) or a warning to skip the trade if event risk is high.</li>
+                    <li><strong>Output:</strong> Publishes a <strong>Screened Payload</strong> to the broker.</li>
+                </ul>
+            </div>
+
+            <div class="tab-panel" id="panel-six">
                 <h2>NotificationWorker Logic & Fault Tolerance</h2>
-                <p>Triggered by analyzed payloads.</p>
+                <p>Triggered by analyzed or screened payloads.</p>
                 <ul>
                     <li><strong>Contextual Filtering:</strong> Evaluates incoming payloads against channel-specific rules (e.g., specific tickers or sentiment thresholds) before proceeding.</li>
                     <li><strong>Formatting:</strong> Applies platform-specific formatting (e.g., Markdown for Discord, HTML for Telegram) based on the channel context.</li>
