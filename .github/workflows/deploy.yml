@@ -66,9 +66,16 @@ jobs:
           find package/ -type d -name "*.dist-info" -exec rm -rf {} +
           find package/ -type d -name "tests" -exec rm -rf {} +
           
+          # Strip heavy dependencies tests and binaries to resolve RequestEntityTooLargeException
+          rm -rf package/pandas/tests
+          rm -rf package/numpy/tests
+          rm -rf package/numpy/core/tests
+          rm -rf package/numpy/random/tests
+          find package/ -name "*.so" -exec strip {} \; || true
+          
           cp -r shared scheduler workers .gemini package/
           cd package
-          zip -r ../deployment.zip .
+          zip -r -q ../deployment.zip .
           cd ..
 
       - name: Update Scraper Lambda Code
