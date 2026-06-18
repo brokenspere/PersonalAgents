@@ -108,30 +108,34 @@ def get_upcoming_earnings(ticker: yf.Ticker) -> Optional[str]:
 
 def analyze_with_gemini(tickers_context: str, api_key: str) -> Optional[str]:
     """
-    Calls Gemini API to generate the swing trading plan.
+    Calls Gemini API to generate the swing trading plan, with model fallbacks.
     """
     if not api_key:
         logger.warning("API key is missing, skipping Gemini analysis.")
         return None
 
-    try:
-        client = genai.Client(api_key=api_key)
-        
-        prompt = f"Filtered Tickers Context:\n{tickers_context}"
-        logger.info("Calling Gemini API for screener plan...")
-        
-        response = client.models.generate_content(
-            model='gemini-3.5-flash',
-            contents=prompt,
-            config=types.GenerateContentConfig(
-                system_instruction=AGENT_INSTRUCTIONS
+    client = genai.Client(api_key=api_key)
+    prompt = f"Filtered Tickers Context:\n{tickers_context}"
+    
+    models_to_try = ['gemini-3.5-flash', 'gemini-2.5-flash', 'gemini-2.5-pro']
+    
+    for model_name in models_to_try:
+        try:
+            logger.info(f"Calling Gemini API for screener plan using {model_name}...")
+            response = client.models.generate_content(
+                model=model_name,
+                contents=prompt,
+                config=types.GenerateContentConfig(
+                    system_instruction=AGENT_INSTRUCTIONS
+                )
             )
-        )
-        logger.info("Gemini API call successful.")
-        return response.text
-    except Exception as e:
-        logger.error(f"Gemini API analysis failed: {e}")
-        return f"[Error: LLM Analysis Failed - {str(e)}]"
+            logger.info(f"Gemini API call successful with {model_name}.")
+            return response.text
+        except Exception as e:
+            logger.warning(f"Gemini API analysis failed with {model_name}: {e}")
+            
+    logger.error("All Gemini API fallback models failed.")
+    return "[Error: LLM Analysis Failed - Models Unavailable]"
 
 def run_screener(market: str, api_key: Optional[str]) -> ScreenedPayload:
     """

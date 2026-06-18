@@ -45,35 +45,40 @@ def analyze_with_gemini(text: str, market_data: str, api_key: str) -> Optional[s
     """
     Calls Gemini API to analyze the headline with market data,
     using the instructions from the finance-analysis agent file.
-    Outputs exclusively in Thai language.
+    Outputs exclusively in Thai language, with model fallbacks.
     """
     if not api_key:
         logger.warning("API key is missing, skipping Gemini analysis.")
         return None
 
-    try:
-        client = genai.Client(api_key=api_key)
-        
-        prompt = f"""
-        Headline: {text}
-        Market Data Context: {market_data}
-        """
-        logger.info(f"Calling Gemini API for headline: '{text[:30]}...'")
-        logger.debug(f"Gemini Prompt: {prompt}")
-        
-        response = client.models.generate_content(
-            model='gemini-2.5-flash',
-            contents=prompt,
-            config=types.GenerateContentConfig(
-                system_instruction=AGENT_INSTRUCTIONS
+    client = genai.Client(api_key=api_key)
+    prompt = f"""
+    Headline: {text}
+    Market Data Context: {market_data}
+    """
+    
+    models_to_try = ['gemini-3.5-flash', 'gemini-2.5-flash', 'gemini-2.5-pro']
+    
+    for model_name in models_to_try:
+        try:
+            logger.info(f"Calling Gemini API for headline using {model_name}: '{text[:30]}...'")
+            logger.debug(f"Gemini Prompt: {prompt}")
+            
+            response = client.models.generate_content(
+                model=model_name,
+                contents=prompt,
+                config=types.GenerateContentConfig(
+                    system_instruction=AGENT_INSTRUCTIONS
+                )
             )
-        )
-        logger.info("Gemini API call successful.")
-        logger.debug(f"Gemini Response: {response.text}")
-        return response.text
-    except Exception as e:
-        logger.error(f"Gemini API analysis failed: {e}")
-        return f"[Error: LLM Analysis Failed - {str(e)}]"
+            logger.info(f"Gemini API call successful with {model_name}.")
+            logger.debug(f"Gemini Response: {response.text}")
+            return response.text
+        except Exception as e:
+            logger.warning(f"Gemini API analysis failed with {model_name}: {e}")
+            
+    logger.error("All Gemini API fallback models failed.")
+    return "[Error: LLM Analysis Failed - Models Unavailable]"
 
 def analyze_payload(payload: EnrichedPayload, api_key: Optional[str]) -> AnalyzedPayload:
     """
