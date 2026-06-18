@@ -117,7 +117,7 @@ def analyze_with_gemini(tickers_context: str, api_key: str) -> Optional[str]:
         logger.info("Calling Gemini API for screener plan...")
         
         response = client.models.generate_content(
-            model='gemini-3.1-pro',
+            model='gemini-3.5-flash',
             contents=prompt,
             config=types.GenerateContentConfig(
                 system_instruction=AGENT_INSTRUCTIONS
