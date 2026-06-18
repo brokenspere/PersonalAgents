@@ -4,7 +4,7 @@ import os
 import requests
 from typing import List
 
-from shared.models import AnalyzedPayload, AnalyzedHeadlineItem
+from shared.models import AnalyzedPayload, AnalyzedHeadlineItem, ScreenedPayload
 
 logger = logging.getLogger(__name__)
 
@@ -62,6 +62,30 @@ def format_telegram_message(payload: AnalyzedPayload, items: List[AnalyzedHeadli
             current_message = f"📢 <b>Updates from {source} for {market} (cont.)</b>:\n\n" + item_text
         else:
             current_message += item_text
+            
+    if current_message.strip():
+        messages.append(current_message)
+        
+    return messages
+
+def format_screened_payload_telegram(payload: ScreenedPayload) -> List[str]:
+    """
+    Formats the Swing Trade Screener payload into Telegram messages.
+    """
+    market = html.escape(payload.market) if payload.market else "Unknown"
+    
+    messages = []
+    header = f"📈 <b>Swing Trade Screener Report ({market})</b>:\n\n"
+    
+    current_message = header
+    
+    if payload.trading_plan:
+        plan_text = html.escape(payload.trading_plan)
+        if len(current_message) + len(plan_text) > 4000:
+            messages.append(current_message)
+            current_message = f"📈 <b>Screener Report (cont.)</b>:\n\n{plan_text}"
+        else:
+            current_message += plan_text
             
     if current_message.strip():
         messages.append(current_message)

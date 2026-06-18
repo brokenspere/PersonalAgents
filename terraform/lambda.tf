@@ -101,3 +101,21 @@ resource "aws_lambda_event_source_mapping" "notification_sqs_trigger" {
   function_name    = aws_lambda_function.notification_function.arn
   batch_size       = 1
 }
+
+resource "aws_lambda_function" "screener_function" {
+  function_name    = "${var.project_name}-screener-${var.environment}"
+  role             = aws_iam_role.screener_lambda_role.arn
+  handler          = "workers.screener.handlers.eventbridge_handler"
+  runtime          = "python3.11"
+  filename         = data.archive_file.dummy_payload.output_path
+  source_code_hash = data.archive_file.dummy_payload.output_base64sha256
+  timeout          = 120
+  memory_size      = 512
+
+  environment {
+    variables = {
+      NOTIFICATION_QUEUE_URL = aws_sqs_queue.notification_queue.url
+      GEMINI_API_KEY_SSM     = aws_ssm_parameter.gemini_api_key.name
+    }
+  }
+}

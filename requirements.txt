@@ -1,6 +1,10 @@
-pydantic>=2.8.0
-requests==2.31.0
-beautifulsoup4==4.12.3
-boto3>=1.34.0
-yfinance>=0.2.40
-google-genai>=0.1.0
+yfinance
+pydantic
+beautifulsoup4
+google-genai
+pandas
+lxml
+celery
+redis
+boto3
+requests

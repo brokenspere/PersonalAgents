@@ -6,10 +6,11 @@ import requests
 from botocore.config import Config
 from typing import Dict, Any
 
-from shared.models import AnalyzedPayload
+from shared.models import AnalyzedPayload, ScreenedPayload
 from workers.notification.service import (
     filter_for_telegram, # filter_for_discord, 
     format_telegram_message, # format_discord_message
+    format_screened_payload_telegram
 )
 
 logger = logging.getLogger()
@@ -50,27 +51,6 @@ def get_telegram_credentials() -> tuple[str, str]:
         logger.exception("Failed to fetch secrets from SSM: %s", e)
         return None, None
 
-# def get_discord_webhook_url() -> str:
-#     if 'webhook_url' in DISCORD_CREDS_CACHE:
-#         return DISCORD_CREDS_CACHE['webhook_url']
-#         
-#     webhook_param_name = os.environ.get('DISCORD_WEBHOOK_URL_SSM')
-#     if not webhook_param_name:
-#         return None
-#         
-#     try:
-#         response = ssm_client.get_parameter(
-#             Name=webhook_param_name,
-#             WithDecryption=True
-#         )
-#         webhook_url = response['Parameter']['Value']
-#         if webhook_url:
-#             DISCORD_CREDS_CACHE['webhook_url'] = webhook_url
-#         return webhook_url
-#     except Exception as e:
-#         logger.exception("Failed to fetch Discord secret from SSM: %s", e)
-#         return None
-
 def send_telegram_notification_aws(message: str) -> None:
     bot_token, chat_id = get_telegram_credentials()
     
@@ -93,16 +73,6 @@ def send_telegram_notification_aws(message: str) -> None:
         
     response.raise_for_status()
 
-# def send_discord_notification_aws(message: str) -> None:
-#     webhook_url = get_discord_webhook_url()
-#     
-#     if not webhook_url or webhook_url == "dummy_value_change_me":
-#         logger.info("Discord webhook not properly configured (dummy or missing), skipping.")
-#         return
-#         
-#     response = requests.post(webhook_url, json={'content': message}, timeout=10)
-#     response.raise_for_status()
-
 def sqs_event_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
     """
     AWS Lambda handler for SQS events.
@@ -110,40 +80,42 @@ def sqs_event_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
     for record in event.get('Records', []):
         try:
             body = json.loads(record['body'])
-            payload = AnalyzedPayload.model_validate(body)
-        except Exception as exc:
-            logger.exception("Failed to parse analyzed payload: %s", exc)
-            continue # Skip this record, avoid poison pill loop
             
-        if not payload.items and not payload.trending_tickers:
-            logger.info("Payload contains no items to notify.")
-            continue
-            
-        # Telegram filtering and sending
-        tg_items = filter_for_telegram(payload.items)
-        if tg_items or payload.trending_tickers:
-            tg_messages = format_telegram_message(payload, tg_items)
-            try:
-                for msg in tg_messages:
-                    send_telegram_notification_aws(msg)
-                logger.info(f"Successfully sent Telegram notification with {len(tg_items)} items across {len(tg_messages)} messages.")
-            except requests.RequestException as exc:
-                logger.warning(f"Telegram notification failed: {exc}")
-                raise # Fail the function to trigger SQS visibility timeout/retry
-        else:
-            logger.info("No items met Telegram filter criteria.")
+            if 'screened_tickers' in body:
+                payload = ScreenedPayload.model_validate(body)
+                if not payload.screened_tickers:
+                    logger.info("ScreenedPayload contains no tickers to notify.")
+                    continue
+                
+                tg_messages = format_screened_payload_telegram(payload)
+                try:
+                    for msg in tg_messages:
+                        send_telegram_notification_aws(msg)
+                    logger.info(f"Successfully sent Telegram notification for ScreenedPayload.")
+                except requests.RequestException as exc:
+                    logger.warning(f"Telegram notification failed for ScreenedPayload: {exc}")
+                    raise
+            else:
+                payload = AnalyzedPayload.model_validate(body)
+                if not payload.items and not payload.trending_tickers:
+                    logger.info("Payload contains no items to notify.")
+                    continue
+                    
+                tg_items = filter_for_telegram(payload.items)
+                if tg_items or payload.trending_tickers:
+                    tg_messages = format_telegram_message(payload, tg_items)
+                    try:
+                        for msg in tg_messages:
+                            send_telegram_notification_aws(msg)
+                        logger.info(f"Successfully sent Telegram notification with {len(tg_items)} items.")
+                    except requests.RequestException as exc:
+                        logger.warning(f"Telegram notification failed: {exc}")
+                        raise
+                else:
+                    logger.info("No items met Telegram filter criteria.")
 
-        # Discord filtering and sending
-#         dc_items = filter_for_discord(payload.items)
-#         if dc_items or payload.trending_tickers:
-#             dc_message = format_discord_message(payload, dc_items)
-#             try:
-#                 send_discord_notification_aws(dc_message)
-#                 logger.info(f"Successfully sent Discord notification with {len(dc_items)} items.")
-#             except requests.RequestException as exc:
-#                 logger.warning(f"Discord notification failed: {exc}")
-#                 raise
-#         else:
-#             logger.info("No items met Discord filter criteria.")
+        except Exception as exc:
+            logger.exception("Failed to parse or process payload: %s", exc)
+            continue
             
     return {"statusCode": 200, "body": "Processed batch"}

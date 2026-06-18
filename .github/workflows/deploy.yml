@@ -98,3 +98,11 @@ jobs:
             --function-name "${{ env.PROJECT_NAME }}-notification-${{ env.ENVIRONMENT }}" \
             --zip-file fileb://deployment.zip \
             --publish
+
+      - name: Update Screener Lambda Code
+        run: |
+          aws lambda update-function-code \
+            --function-name "${{ env.PROJECT_NAME }}-screener-${{ env.ENVIRONMENT }}" \
+            --zip-file fileb://deployment.zip \
+            --publish
+

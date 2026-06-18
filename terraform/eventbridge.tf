@@ -49,3 +49,22 @@ resource "aws_lambda_permission" "allow_eventbridge_close" {
   principal     = "events.amazonaws.com"
   source_arn    = aws_cloudwatch_event_rule.market_close_rule.arn
 }
+
+resource "aws_cloudwatch_event_target" "screener_market_close_target" {
+  rule      = aws_cloudwatch_event_rule.market_close_rule.name
+  target_id = "ScreenerFunction"
+  arn       = aws_lambda_function.screener_function.arn
+  
+  input = jsonencode({
+    event_type = "market.close"
+    market     = "NYSE"
+  })
+}
+
+resource "aws_lambda_permission" "allow_eventbridge_close_screener" {
+  statement_id  = "AllowExecutionFromEventBridgeCloseScreener"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.screener_function.function_name
+  principal     = "events.amazonaws.com"
+  source_arn    = aws_cloudwatch_event_rule.market_close_rule.arn
+}
