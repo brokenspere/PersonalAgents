@@ -1,6 +1,8 @@
 import json
 import logging
 import os
+import time
+import random
 import requests
 from bs4 import BeautifulSoup
 from typing import List, Optional
@@ -108,7 +110,7 @@ def get_upcoming_earnings(ticker: yf.Ticker) -> Optional[str]:
 
 def analyze_with_gemini(tickers_context: str, api_key: str) -> Optional[str]:
     """
-    Calls Gemini API to generate the swing trading plan, with model fallbacks.
+    Calls Gemini API to generate the swing trading plan, with model fallbacks and retries.
     """
     if not api_key:
         logger.warning("API key is missing, skipping Gemini analysis.")
@@ -117,24 +119,36 @@ def analyze_with_gemini(tickers_context: str, api_key: str) -> Optional[str]:
     client = genai.Client(api_key=api_key)
     prompt = f"Filtered Tickers Context:\n{tickers_context}"
     
-    models_to_try = ['gemini-2.5-flash', 'gemini-3.5-flash', 'gemini-2.5-pro']
+    # Using stable 1.5 and experimental 2.0 models
+    models_to_try = ['gemini-2.0-flash-exp', 'gemini-2.5-flash', 'gemini-1.5-pro']
+    max_retries = 3
     
     for model_name in models_to_try:
-        try:
-            logger.info(f"Calling Gemini API for screener plan using {model_name}...")
-            response = client.models.generate_content(
-                model=model_name,
-                contents=prompt,
-                config=types.GenerateContentConfig(
-                    system_instruction=AGENT_INSTRUCTIONS
+        for attempt in range(max_retries):
+            try:
+                logger.info(f"Calling Gemini API for screener plan using {model_name} (Attempt {attempt+1})...")
+                response = client.models.generate_content(
+                    model=model_name,
+                    contents=prompt,
+                    config=types.GenerateContentConfig(
+                        system_instruction=AGENT_INSTRUCTIONS
+                    )
                 )
-            )
-            logger.info(f"Gemini API call successful with {model_name}.")
-            return response.text
-        except Exception as e:
-            logger.warning(f"Gemini API analysis failed with {model_name}: {e}")
+                logger.info(f"Gemini API call successful with {model_name}.")
+                return response.text
+            except Exception as e:
+                error_str = str(e).lower()
+                # Retry on rate limit (429) or service unavailable (503)
+                if any(code in error_str for code in ["429", "503", "rate limit", "exhausted"]):
+                    wait_time = (2 ** attempt) + random.uniform(0, 1)
+                    logger.warning(f"Gemini API {model_name} hit limit/error: {e}. Retrying in {wait_time:.2f}s...")
+                    time.sleep(wait_time)
+                    continue
+                else:
+                    logger.warning(f"Gemini API analysis failed with {model_name} due to non-retryable error: {e}")
+                    break # Try next model
             
-    logger.error("All Gemini API fallback models failed.")
+    logger.error("All Gemini API fallback models and retries failed.")
     return "[Error: LLM Analysis Failed - Models Unavailable]"
 
 def run_screener(market: str, api_key: Optional[str]) -> ScreenedPayload:

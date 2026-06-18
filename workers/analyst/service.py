@@ -1,5 +1,7 @@
 import logging
 import os
+import time
+import random
 from typing import List, Optional
 import yfinance as yf
 from google import genai
@@ -45,7 +47,7 @@ def analyze_with_gemini(text: str, market_data: str, api_key: str) -> Optional[s
     """
     Calls Gemini API to analyze the headline with market data,
     using the instructions from the finance-analysis agent file.
-    Outputs exclusively in Thai language, with model fallbacks.
+    Outputs exclusively in Thai language, with model fallbacks and manual retries.
     """
     if not api_key:
         logger.warning("API key is missing, skipping Gemini analysis.")
@@ -57,27 +59,38 @@ def analyze_with_gemini(text: str, market_data: str, api_key: str) -> Optional[s
     Market Data Context: {market_data}
     """
     
-    models_to_try = ['gemini-2.5-flash', 'gemini-3.5-flash', 'gemini-2.5-pro']
+    # Using stable 1.5 and experimental 2.0 models
+    models_to_try = ['gemini-2.0-flash-exp', 'gemini-2.5-flash', 'gemini-1.5-pro']
+    max_retries = 3
     
     for model_name in models_to_try:
-        try:
-            logger.info(f"Calling Gemini API for headline using {model_name}: '{text[:30]}...'")
-            logger.debug(f"Gemini Prompt: {prompt}")
-            
-            response = client.models.generate_content(
-                model=model_name,
-                contents=prompt,
-                config=types.GenerateContentConfig(
-                    system_instruction=AGENT_INSTRUCTIONS
+        for attempt in range(max_retries):
+            try:
+                logger.info(f"Calling Gemini API for headline using {model_name} (Attempt {attempt+1}): '{text[:30]}...'")
+                
+                response = client.models.generate_content(
+                    model=model_name,
+                    contents=prompt,
+                    config=types.GenerateContentConfig(
+                        system_instruction=AGENT_INSTRUCTIONS
+                    )
                 )
-            )
-            logger.info(f"Gemini API call successful with {model_name}.")
-            logger.debug(f"Gemini Response: {response.text}")
-            return response.text
-        except Exception as e:
-            logger.warning(f"Gemini API analysis failed with {model_name}: {e}")
+                logger.info(f"Gemini API call successful with {model_name}.")
+                return response.text
+                
+            except Exception as e:
+                error_str = str(e).lower()
+                # Retry on rate limit (429) or service unavailable (503)
+                if any(code in error_str for code in ["429", "503", "rate limit", "exhausted"]):
+                    wait_time = (2 ** attempt) + random.uniform(0, 1)
+                    logger.warning(f"Gemini API {model_name} hit limit/error: {e}. Retrying in {wait_time:.2f}s...")
+                    time.sleep(wait_time)
+                    continue
+                else:
+                    logger.warning(f"Gemini API analysis failed with {model_name} due to non-retryable error: {e}")
+                    break # Try next model
             
-    logger.error("All Gemini API fallback models failed.")
+    logger.error("All Gemini API fallback models and retries failed.")
     return "[Error: LLM Analysis Failed - Models Unavailable]"
 
 def analyze_payload(payload: EnrichedPayload, api_key: Optional[str]) -> AnalyzedPayload:
@@ -87,7 +100,13 @@ def analyze_payload(payload: EnrichedPayload, api_key: Optional[str]) -> Analyze
     logger.info(f"Starting analysis for payload from {payload.source}. Received {len(payload.items)} items and {len(payload.trending_tickers)} trending tickers.")
     analyzed_items: List[AnalyzedHeadlineItem] = []
     
-    for item in payload.items:
+    for i, item in enumerate(payload.items):
+        # Add jitter/delay between items to respect Free Tier RPM (max 15 RPM)
+        if i > 0 and api_key:
+            delay = 4 + random.uniform(0, 2) # ~4-6 seconds delay
+            logger.info(f"Adding jitter delay of {delay:.2f}s before next analysis...")
+            time.sleep(delay)
+
         logger.info(f"Processing item: '{item.title}'")
         logger.info(f"Extracted tickers for item: {item.extracted_tickers}")
         
