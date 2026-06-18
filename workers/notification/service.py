@@ -15,9 +15,9 @@ DISCORD_WEBHOOK_URL = os.environ.get('DISCORD_WEBHOOK_URL')
 
 def filter_for_telegram(items: List[AnalyzedHeadlineItem]) -> List[AnalyzedHeadlineItem]:
     """
-    Telegram only receives highly impactful news (sentiment > 0.5 or < -0.5) or news with analysis.
+    Telegram only receives news with analysis.
     """
-    return [item for item in items if abs(item.sentiment_score) > 0.5 or item.analysis]
+    return [item for item in items if item.analysis]
 
 def filter_for_discord(items: List[AnalyzedHeadlineItem]) -> List[AnalyzedHeadlineItem]:
     """
@@ -46,7 +46,7 @@ def format_telegram_message(payload: AnalyzedPayload, items: List[AnalyzedHeadli
         else:
             tickers = ""
         
-        item_text = f"🔹 <a href=\"{url}\">{title}</a>{tickers} (Sentiment: {item.sentiment_score:.2f})\n"
+        item_text = f"🔹 <a href=\"{url}\">{title}</a>{tickers}\n"
         if item.analysis:
             analysis_text = html.escape(item.analysis)
             if len(analysis_text) > 2000:
@@ -79,7 +79,7 @@ def format_telegram_message(payload: AnalyzedPayload, items: List[AnalyzedHeadli
 #         title = item.title
 #         url = str(item.url)
 #         tickers = f" [Tags: {', '.join(item.extracted_tickers)}]" if item.extracted_tickers else ""
-#         message += f"🔹 [{title}]({url}){tickers} (Sentiment: {item.sentiment_score:.2f})\n"
+#         message += f"🔹 [{title}]({url}){tickers}\n"
 #         if item.analysis:
 #             message += f"💡 *Analysis:* {item.analysis}\n"
 #     return message

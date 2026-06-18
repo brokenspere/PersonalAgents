@@ -20,21 +20,18 @@ def get_sample_payload():
                 title='Market is up today significantly', 
                 url='https://finance.yahoo.com/news/up',
                 extracted_tickers=['SPY'],
-                sentiment_score=0.8,
                 analysis='Market looks good'
             ),
             AnalyzedHeadlineItem(
                 title='Tech stocks rally continues', 
                 url='https://finance.yahoo.com/news/tech',
                 extracted_tickers=['AAPL', 'MSFT'],
-                sentiment_score=0.1, # Not impactful, but has analysis? Let's make it have no analysis
                 analysis=None
             ),
             AnalyzedHeadlineItem(
                 title='Company goes bankrupt', 
                 url='https://finance.yahoo.com/news/bad',
                 extracted_tickers=[],
-                sentiment_score=-0.9, # Impactful
                 analysis=None
             )
         ]
@@ -43,9 +40,8 @@ def get_sample_payload():
 def test_filter_for_telegram():
     payload = get_sample_payload()
     filtered = filter_for_telegram(payload.items)
-    assert len(filtered) == 2
+    assert len(filtered) == 1
     assert filtered[0].title == 'Market is up today significantly'
-    assert filtered[1].title == 'Company goes bankrupt'
 
 # def test_filter_for_discord():
 #     payload = get_sample_payload()
@@ -65,7 +61,7 @@ def test_format_telegram_message():
     assert "Impactful updates from yahoo_finance for NYSE" in message
     assert "Trending Tickers:</b> AAPL, MSFT" in message
     assert "Market is up today significantly" in message
-    assert "Company goes bankrupt" in message
+    assert "Company goes bankrupt" not in message
     assert "Tech stocks rally continues" not in message
     assert "<b>" in message  # HTML mode
 

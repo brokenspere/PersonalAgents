@@ -36,8 +36,6 @@ def test_enrich_items():
     
     # First item
     assert "AAPL" in enriched[0].extracted_tickers
-    assert enriched[0].sentiment_score > 0  # Should be positive
     
     # Second item
-    assert enriched[1].sentiment_score < 0  # Should be negative
     assert len(enriched[1].extracted_tickers) == 0

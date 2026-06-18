@@ -41,9 +41,9 @@ def fetch_market_data(ticker_symbol: str) -> str:
         logger.warning(f"Failed to fetch data for {ticker_symbol}: {e}")
         return f"Error fetching {ticker_symbol} data."
 
-def analyze_with_gemini(text: str, market_data: str, sentiment: float, api_key: str) -> Optional[str]:
+def analyze_with_gemini(text: str, market_data: str, api_key: str) -> Optional[str]:
     """
-    Calls Gemini API to analyze the headline with market data and sentiment,
+    Calls Gemini API to analyze the headline with market data,
     using the instructions from the finance-analysis agent file.
     Outputs exclusively in Thai language.
     """
@@ -56,7 +56,6 @@ def analyze_with_gemini(text: str, market_data: str, sentiment: float, api_key: 
         
         prompt = f"""
         Headline: {text}
-        VADER Sentiment Score: {sentiment}
         Market Data Context: {market_data}
         """
         logger.info(f"Calling Gemini API for headline: '{text[:30]}...'")
@@ -100,7 +99,6 @@ def analyze_payload(payload: EnrichedPayload, api_key: Optional[str]) -> Analyze
             analysis = analyze_with_gemini(
                 text=item.title,
                 market_data=market_data_str,
-                sentiment=item.sentiment_score,
                 api_key=api_key
             )
         else:
@@ -110,7 +108,6 @@ def analyze_payload(payload: EnrichedPayload, api_key: Optional[str]) -> Analyze
         analyzed_item = AnalyzedHeadlineItem(
             title=item.title,
             url=item.url,
-            sentiment_score=item.sentiment_score,
             extracted_tickers=item.extracted_tickers,
             analysis=analysis
         )

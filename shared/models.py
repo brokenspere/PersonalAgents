@@ -28,7 +28,6 @@ class ExtractionPayload(BaseModel):
     trending_tickers: List[str] = Field(default_factory=list, description="Array of trending tickers")
 
 class EnrichedHeadlineItem(HeadlineItem):
-    sentiment_score: float = Field(default=0.0, description="VADER sentiment score")
     extracted_tickers: List[str] = Field(default_factory=list, description="List of tickers extracted from the headline")
 
 class EnrichedPayload(BaseModel):

@@ -1,9 +1,6 @@
 import re
 from typing import List
-from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
 from shared.models import EnrichedHeadlineItem, HeadlineItem
-
-analyzer = SentimentIntensityAnalyzer()
 
 def extract_tickers_from_text(text: str) -> List[str]:
     """
@@ -30,14 +27,11 @@ def extract_tickers_from_text(text: str) -> List[str]:
 def enrich_items(items: List[HeadlineItem]) -> List[EnrichedHeadlineItem]:
     enriched = []
     for item in items:
-        sentiment = analyzer.polarity_scores(item.title)
-        score = sentiment['compound']
         tickers = extract_tickers_from_text(item.title)
         
         enriched.append(EnrichedHeadlineItem(
             title=item.title,
             url=item.url,
-            sentiment_score=score,
             extracted_tickers=tickers
         ))
     return enriched

@@ -26,7 +26,6 @@ def test_analyze_payload(mock_fetch, mock_analyze):
             EnrichedHeadlineItem(
                 title="Apple releases new product",
                 url="http://example.com",
-                sentiment_score=0.8,
                 extracted_tickers=["AAPL"]
             )
         ],

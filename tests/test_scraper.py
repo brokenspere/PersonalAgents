@@ -7,10 +7,10 @@ from shared.models import Event
 SAMPLE_HTML = """
 <html>
   <body>
-    <a href="/news/test-news-article-123.html">This is a valid news headline that is long enough</a>
-    <a href="/video/test-video.html">Watch this video about market trends right now</a>
-    <a href="/short">Short</a>
-    <a href="https://example.com/not-article">Not a news link with long enough text to pass length</a>
+    <a href="/news/test-news-article-123.html"><h3>This is a valid news headline that is long enough</h3></a>
+    <a href="/video/test-video.html"><h3>Watch this video about market trends right now</h3></a>
+    <a href="/short"><h3>Short</h3></a>
+    <a href="/deals/breaking-news"><h3>Not a news link with long enough text to pass length</h3></a>
   </body>
 </html>
 """
