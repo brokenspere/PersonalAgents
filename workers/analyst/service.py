@@ -57,7 +57,7 @@ def analyze_with_gemini(text: str, market_data: str, api_key: str) -> Optional[s
     Market Data Context: {market_data}
     """
     
-    models_to_try = ['gemini-3.5-flash', 'gemini-2.5-flash', 'gemini-2.5-pro']
+    models_to_try = ['gemini-2.5-flash', 'gemini-3.5-flash', 'gemini-2.5-pro']
     
     for model_name in models_to_try:
         try:

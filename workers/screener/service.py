@@ -117,7 +117,7 @@ def analyze_with_gemini(tickers_context: str, api_key: str) -> Optional[str]:
     client = genai.Client(api_key=api_key)
     prompt = f"Filtered Tickers Context:\n{tickers_context}"
     
-    models_to_try = ['gemini-3.5-flash', 'gemini-2.5-flash', 'gemini-2.5-pro']
+    models_to_try = ['gemini-2.5-flash', 'gemini-3.5-flash', 'gemini-2.5-pro']
     
     for model_name in models_to_try:
         try:
