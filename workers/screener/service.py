@@ -32,34 +32,38 @@ except Exception as e:
     logger.warning(f"Could not load agent file from {AGENT_FILE_PATH}: {e}")
     AGENT_INSTRUCTIONS = "You are a financial analysis agent. Provide your analysis entirely in Thai language."
 
-def get_sp500_tickers() -> List[str]:
+def get_nasdaq100_tickers() -> List[str]:
     """
-    Dynamically fetches the current S&P 500 tickers from Wikipedia.
+    Dynamically fetches the current Nasdaq-100 tickers from Wikipedia.
     """
     try:
-        url = "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies"
+        url = "https://en.wikipedia.org/wiki/Nasdaq-100"
         headers = {"User-Agent": "Mozilla/5.0"}
-        logger.info(f"Fetching S&P 500 tickers from {url}")
+        logger.info(f"Fetching Nasdaq-100 tickers from {url}")
         response = requests.get(url, headers=headers, timeout=10)
         response.raise_for_status()
         
         soup = BeautifulSoup(response.text, 'html.parser')
-        table = soup.find('table', {'class': 'wikitable'})
+        table = soup.find('table', {'id': 'constituents'})
         
         tickers = []
         if table:
+            headers_row = table.find('tr')
+            headers_th = [th.text.strip() for th in headers_row.find_all('th')]
+            ticker_idx = headers_th.index('Ticker') if 'Ticker' in headers_th else 1
+            
             for row in table.find_all('tr')[1:]:
                 cols = row.find_all('td')
-                if len(cols) > 0:
-                    ticker = cols[0].text.strip()
+                if len(cols) > ticker_idx:
+                    ticker = cols[ticker_idx].text.strip()
                     # yfinance uses '-' for class shares instead of '.'
                     ticker = ticker.replace('.', '-')
                     tickers.append(ticker)
         
-        logger.info(f"Successfully fetched {len(tickers)} S&P 500 tickers.")
+        logger.info(f"Successfully fetched {len(tickers)} Nasdaq-100 tickers.")
         return tickers
     except Exception as e:
-        logger.error(f"Failed to fetch S&P 500 tickers: {e}")
+        logger.error(f"Failed to fetch Nasdaq-100 tickers: {e}")
         # Fallback to a safe hardcoded list if scraping fails
         return ['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'NVDA', 'META', 'TSLA']
 
@@ -137,7 +141,7 @@ def run_screener(market: str, api_key: Optional[str]) -> ScreenedPayload:
     screened_items = []
     
     macro_risk = check_macro_event_risk()
-    watchlist = get_sp500_tickers()
+    watchlist = get_nasdaq100_tickers()
     
     for symbol in watchlist:
         logger.info(f"Screening {symbol}...")

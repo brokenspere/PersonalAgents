@@ -5,7 +5,7 @@ from shared.models import ScreenedPayload
 
 @patch('workers.screener.service.yf.Ticker')
 @patch('workers.screener.service.analyze_with_gemini')
-@patch('workers.screener.service.get_sp500_tickers')
+@patch('workers.screener.service.get_nasdaq100_tickers')
 def test_run_screener_passes_technical_check(mock_get_tickers, mock_gemini, mock_ticker):
     # Mock Ticker data
     mock_history = MagicMock()
