@@ -60,7 +60,7 @@ def analyze_with_gemini(text: str, market_data: str, api_key: str) -> Optional[s
     """
     
     # Using stable 1.5 and experimental 2.0 models
-    models_to_try = ['gemini-2.0-flash-exp', 'gemini-2.5-flash', 'gemini-1.5-pro']
+    models_to_try = ['gemini-3.5-flash', 'gemini-3.1-flash-lite','gemini-2.5-flash']
     max_retries = 3
     
     for model_name in models_to_try:
