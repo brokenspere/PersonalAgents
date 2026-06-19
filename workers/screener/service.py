@@ -120,7 +120,7 @@ def analyze_with_gemini(tickers_context: str, api_key: str) -> Optional[str]:
     prompt = f"Filtered Tickers Context:\n{tickers_context}"
     
     # Using stable 1.5 and experimental 2.0 models
-    models_to_try = ['gemini-2.0-flash-exp', 'gemini-2.5-flash', 'gemini-1.5-pro']
+    models_to_try = ['gemini-3.1-flash-lite', 'gemini-2.5-flash', 'gemini-2.5-flash-lite']
     max_retries = 3
     
     for model_name in models_to_try:
