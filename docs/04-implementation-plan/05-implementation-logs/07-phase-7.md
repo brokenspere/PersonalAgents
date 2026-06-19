@@ -15,7 +15,7 @@ This phase focused on implementing the post-market Swing Trade Screener Agent. T
 2. **Terraform Infrastructure:**
    - **`lambda.tf`:** Provisioned the `screener_function` Lambda resource.
    - **`iam.tf`:** Created `screener_lambda_role`, `screener_sqs_policy` (to publish to the `notification_queue`), and `screener_ssm_policy` (to read the `GEMINI_API_KEY_SSM`).
-   - **`eventbridge.tf`:** Set up the EventBridge target and permission to directly invoke the `screener_function` on the `market.close` event.
+   - **`eventbridge.tf`:** Created a dedicated `screener_post_close_rule` that triggers the `screener_function` 7 hours after market close (`cron(0 3 ? * TUE-SAT *)`), decoupled from the scraper's `market_close_rule` to avoid LLM rate-limit contention.
 
 3. **Screener Worker Implementation (`workers/screener/`):**
    - **`service.py`:** 

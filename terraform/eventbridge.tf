@@ -50,8 +50,16 @@ resource "aws_lambda_permission" "allow_eventbridge_close" {
   source_arn    = aws_cloudwatch_event_rule.market_close_rule.arn
 }
 
-resource "aws_cloudwatch_event_target" "screener_market_close_target" {
-  rule      = aws_cloudwatch_event_rule.market_close_rule.name
+# EventBridge rule for Screener — 7 hours after market close (20:00 + 7h = 03:00 UTC next day)
+# Separated from scraper schedule to avoid LLM rate-limit contention.
+resource "aws_cloudwatch_event_rule" "screener_post_close_rule" {
+  name                = "${var.project_name}-screener-post-close-${var.environment}"
+  description         = "Triggers screener 7 hours after market close to avoid LLM rate limits"
+  schedule_expression = "cron(0 3 ? * TUE-SAT *)"
+}
+
+resource "aws_cloudwatch_event_target" "screener_post_close_target" {
+  rule      = aws_cloudwatch_event_rule.screener_post_close_rule.name
   target_id = "ScreenerFunction"
   arn       = aws_lambda_function.screener_function.arn
   
@@ -61,10 +69,10 @@ resource "aws_cloudwatch_event_target" "screener_market_close_target" {
   })
 }
 
-resource "aws_lambda_permission" "allow_eventbridge_close_screener" {
-  statement_id  = "AllowExecutionFromEventBridgeCloseScreener"
+resource "aws_lambda_permission" "allow_eventbridge_screener_post_close" {
+  statement_id  = "AllowExecutionFromEventBridgeScreenerPostClose"
   action        = "lambda:InvokeFunction"
   function_name = aws_lambda_function.screener_function.function_name
   principal     = "events.amazonaws.com"
-  source_arn    = aws_cloudwatch_event_rule.market_close_rule.arn
+  source_arn    = aws_cloudwatch_event_rule.screener_post_close_rule.arn
 }
